@@ -1,0 +1,181 @@
+<Window x:Class="QualityCheckApp.Engine.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
+        mc:Ignorable="d"
+        Title="质检压缩包处理工具（ArcGIS Engine）"
+        Height="720"
+        Width="1200"
+        MinHeight="600"
+        MinWidth="960">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Margin="16"
+                CornerRadius="12"
+                Background="#FF1E1E2E"
+                BorderBrush="#FF2E2E3E"
+                BorderThickness="1">
+            <Grid>
+                <wfi:WindowsFormsHost x:Name="MapHost" />
+                <TextBlock Text="AxMapControl 加载中..."
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="#66FFFFFF"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMapReady}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <Border HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="16"
+                        Padding="8"
+                        Background="#B3202033"
+                        CornerRadius="8">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="放大"
+                                Width="64"
+                                Margin="0,0,8,0"
+                                Click="OnZoomInClick"
+                                IsEnabled="{Binding IsMapReady}" />
+                        <Button Content="缩小"
+                                Width="64"
+                                Margin="0,0,8,0"
+                                Click="OnZoomOutClick"
+                                IsEnabled="{Binding IsMapReady}" />
+                        <Button Content="全图"
+                                Width="64"
+                                Click="OnZoomFullExtentClick"
+                                IsEnabled="{Binding IsMapReady}" />
+                    </StackPanel>
+                </Border>
+
+                <Border HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="16"
+                        Padding="8"
+                        Background="#B3202033"
+                        CornerRadius="8">
+                    <StackPanel>
+                        <TextBlock Text="{Binding MouseCoordinate}"
+                                   Foreground="#FFFFFFFF"
+                                   FontSize="12"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="{Binding ScaleInfo}"
+                                   Foreground="#FFB9B9D5"
+                                   FontSize="12" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="压缩包选择"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,8" />
+                <TextBlock Text="{Binding SelectedZipPath, TargetNullValue=尚未选择压缩包}"
+                           Foreground="#FF55556B"
+                           FontSize="14"
+                           TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button Content="选择压缩包"
+                            Width="120"
+                            Margin="0,0,12,0"
+                            Click="OnSelectZipClick"
+                            IsEnabled="{Binding IsNotBusy}" />
+                    <Button Content="解析并加载"
+                            Width="120"
+                            Click="OnAnalyzeZipClick"
+                            IsEnabled="{Binding IsAnalyzeEnabled}" />
+                    <Button Content="清空结果"
+                            Width="120"
+                            Margin="12,0,0,0"
+                            Click="OnClearClick" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                <TextBlock Text="运行状态" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           Margin="0,8,0,0"
+                           Foreground="#FF55556B"
+                           TextWrapping="Wrap" />
+                <ProgressBar Height="8"
+                             Margin="0,12,0,0"
+                             IsIndeterminate="{Binding IsBusy}"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            </StackPanel>
+
+            <GroupBox Grid.Row="2" Header="已解析的 .gdb 图层" Padding="8">
+                <DataGrid x:Name="LayersGrid"
+                          ItemsSource="{Binding Layers}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="False"
+                          HeadersVisibility="Column"
+                          AlternatingRowBackground="#FFEFF1F5"
+                          MouseDoubleClick="OnLayersGridDoubleClick">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="2*" />
+                        <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
+                        <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="Auto" />
+                        <DataGridCheckBoxColumn Header="地图可见"
+                                                 Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
+                                                 Width="Auto" />
+                        <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="3*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+
+            <TextBlock Grid.Row="3"
+                       Text="提示：可显示的图层会默认加载到地图，取消勾选即可隐藏。"
+                       Foreground="#FF9B9BB5"
+                       FontStyle="Italic"
+                       Margin="0,12,0,0" />
+        </Grid>
+
+        <Border Grid.ColumnSpan="2"
+                Background="#AAFFFFFF"
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                CornerRadius="12" Margin="0,0,-0.4,0.4">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="正在处理，请稍候..."
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="#FF1F1F2F"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
