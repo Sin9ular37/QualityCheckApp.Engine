@@ -3,6 +3,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QualityCheckApp.Engine", "QualityCheckApp.Engine\QualityCheckApp.Engine.csproj", "{42F4A77E-C89C-4FE5-B13A-E0EAB5984531}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapControl", "MapControl\MapControl.csproj", "{9B8D2B50-F38D-4CD8-8EFE-D6E043B124F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QualityCheckApp.Integration", "QualityCheckApp.Integration\QualityCheckApp.Integration.csproj", "{64CBD8B7-4F5D-4633-8D51-18495AC96336}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,6 +17,14 @@ Global
 		{42F4A77E-C89C-4FE5-B13A-E0EAB5984531}.Debug|x86.Build.0 = Debug|x86
 		{42F4A77E-C89C-4FE5-B13A-E0EAB5984531}.Release|x86.ActiveCfg = Release|x86
 		{42F4A77E-C89C-4FE5-B13A-E0EAB5984531}.Release|x86.Build.0 = Release|x86
+		{9B8D2B50-F38D-4CD8-8EFE-D6E043B124F5}.Debug|x86.ActiveCfg = Debug|x86
+		{9B8D2B50-F38D-4CD8-8EFE-D6E043B124F5}.Debug|x86.Build.0 = Debug|x86
+		{9B8D2B50-F38D-4CD8-8EFE-D6E043B124F5}.Release|x86.ActiveCfg = Release|x86
+		{9B8D2B50-F38D-4CD8-8EFE-D6E043B124F5}.Release|x86.Build.0 = Release|x86
+		{64CBD8B7-4F5D-4633-8D51-18495AC96336}.Debug|x86.ActiveCfg = Debug|x86
+		{64CBD8B7-4F5D-4633-8D51-18495AC96336}.Debug|x86.Build.0 = Debug|x86
+		{64CBD8B7-4F5D-4633-8D51-18495AC96336}.Release|x86.ActiveCfg = Release|x86
+		{64CBD8B7-4F5D-4633-8D51-18495AC96336}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
