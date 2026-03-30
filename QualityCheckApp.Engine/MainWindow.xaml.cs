@@ -31,10 +31,14 @@ namespace QualityCheckApp.Engine
         private AxMapControl _mapControl;
         private ITool _mapPanTool;
         private ZipExtractionResult _currentExtraction;
+        private GdbLayerInfo _selectedLayer;
         private string _selectedZipPath;
-        private string _statusMessage = "请选择包含 File Geodatabase (.gdb) 的 ZIP 文件。";
+        private string _statusMessage = "请选择 ZIP 压缩包。支持普通 .gdb ZIP 和标准测试包。";
         private string _mouseCoordinate = "当前坐标：--";
         private string _scaleInfo = "比例尺：--";
+        private string _packageMode = "待识别";
+        private string _structureSummary = "尚未执行压缩包检查。";
+        private int _detectedGdbCount;
         private bool _isBusy;
         private bool _isMapReady;
 
@@ -70,7 +74,29 @@ namespace QualityCheckApp.Engine
 
                 _selectedZipPath = value ?? string.Empty;
                 OnPropertyChanged("SelectedZipPath");
+                OnPropertyChanged("SelectedZipPathDisplay");
                 OnPropertyChanged("IsAnalyzeEnabled");
+            }
+        }
+
+        public string SelectedZipPathDisplay
+        {
+            get { return string.IsNullOrWhiteSpace(SelectedZipPath) ? "尚未选择压缩包" : SelectedZipPath; }
+        }
+
+        public GdbLayerInfo SelectedLayer
+        {
+            get { return _selectedLayer; }
+            set
+            {
+                if (_selectedLayer == value)
+                {
+                    return;
+                }
+
+                _selectedLayer = value;
+                OnPropertyChanged("SelectedLayer");
+                OnPropertyChanged("CanLocateSelectedLayer");
             }
         }
 
@@ -103,6 +129,7 @@ namespace QualityCheckApp.Engine
                 OnPropertyChanged("IsBusy");
                 OnPropertyChanged("IsAnalyzeEnabled");
                 OnPropertyChanged("IsNotBusy");
+                OnPropertyChanged("CanLocateSelectedLayer");
             }
         }
 
@@ -114,6 +141,95 @@ namespace QualityCheckApp.Engine
         public bool IsAnalyzeEnabled
         {
             get { return !IsBusy && !string.IsNullOrWhiteSpace(SelectedZipPath); }
+        }
+
+        public string PackageMode
+        {
+            get { return _packageMode; }
+            private set
+            {
+                if (_packageMode == value)
+                {
+                    return;
+                }
+
+                _packageMode = value ?? string.Empty;
+                OnPropertyChanged("PackageMode");
+            }
+        }
+
+        public string StructureSummary
+        {
+            get { return _structureSummary; }
+            private set
+            {
+                if (_structureSummary == value)
+                {
+                    return;
+                }
+
+                _structureSummary = value ?? string.Empty;
+                OnPropertyChanged("StructureSummary");
+            }
+        }
+
+        public int DetectedGdbCount
+        {
+            get { return _detectedGdbCount; }
+            private set
+            {
+                if (_detectedGdbCount == value)
+                {
+                    return;
+                }
+
+                _detectedGdbCount = value;
+                OnPropertyChanged("DetectedGdbCount");
+            }
+        }
+
+        public int LayerCount
+        {
+            get { return Layers.Count; }
+        }
+
+        public int DisplayableLayerCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var layer in Layers)
+                {
+                    if (layer.Displayable)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public int VisibleLayerCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var layer in Layers)
+                {
+                    if (layer.Displayable && layer.IsVisible)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public bool CanLocateSelectedLayer
+        {
+            get { return !IsBusy && IsMapReady && SelectedLayer != null && SelectedLayer.Displayable; }
         }
 
         public bool IsMapReady
@@ -128,6 +244,7 @@ namespace QualityCheckApp.Engine
 
                 _isMapReady = value;
                 OnPropertyChanged("IsMapReady");
+                OnPropertyChanged("CanLocateSelectedLayer");
             }
         }
 
@@ -184,7 +301,7 @@ namespace QualityCheckApp.Engine
             if (dialog.ShowDialog() == true)
             {
                 SelectedZipPath = dialog.FileName;
-                StatusMessage = "已选择压缩包，点击“解析并加载”开始处理。";
+                StatusMessage = "已选择压缩包，点击“开始检查”分析结构并加载图层。";
             }
         }
 
@@ -207,15 +324,22 @@ namespace QualityCheckApp.Engine
                 }
                 _currentExtraction = await _zipService.ExtractAsync(SelectedZipPath, token);
 
-                if (_currentExtraction.GdbDirectories.Count == 0)
+                StatusMessage = "正在检查压缩包结构...";
+                var gdbDirectories = ResolvePackageGdbDirectories(_currentExtraction.ExtractionRoot, _currentExtraction.GdbDirectories);
+                DetectedGdbCount = gdbDirectories.Count;
+
+                if (gdbDirectories.Count == 0)
                 {
-                    StatusMessage = "压缩包中没有找到 .gdb 目录。";
+                    StatusMessage = PackageMode == "标准测试包"
+                        ? "测试1 目录中未检测到 .gdb 数据。"
+                        : "压缩包中没有找到 .gdb 目录。";
                     return;
                 }
 
                 var aggregated = new List<GdbLayerInfo>();
 
-                foreach (var gdb in _currentExtraction.GdbDirectories)
+                StatusMessage = "正在读取 .gdb 图层信息...";
+                foreach (var gdb in gdbDirectories)
                 {
                     token.ThrowIfCancellationRequested();
                     var layers = await _layerProvider.LoadLayersAsync(gdb, token);
@@ -227,7 +351,11 @@ namespace QualityCheckApp.Engine
                     Layers.Add(layer);
                 }
 
-                StatusMessage = string.Format("解析完成，共发现 {0} 个图层。", Layers.Count);
+                StatusMessage = string.Format("{0}处理完成：识别到 {1} 个 .gdb，共 {2} 个图层，可显示 {3} 个。",
+                    PackageMode == "标准测试包" ? "标准包" : "普通包",
+                    DetectedGdbCount,
+                    LayerCount,
+                    DisplayableLayerCount);
             });
         }
 
@@ -269,6 +397,7 @@ namespace QualityCheckApp.Engine
 
         private void ClearResults()
         {
+            SelectedLayer = null;
             Layers.CollectionChanged -= OnLayersCollectionChanged;
             foreach (var layer in Layers)
             {
@@ -284,6 +413,69 @@ namespace QualityCheckApp.Engine
                 _currentExtraction.Dispose();
             }
             _currentExtraction = null;
+
+            ResetInspectionSummary();
+        }
+
+        private void ResetInspectionSummary()
+        {
+            DetectedGdbCount = 0;
+            PackageMode = "待识别";
+            StructureSummary = "尚未执行压缩包检查。";
+            NotifyLayerStatisticsChanged();
+        }
+
+        private IReadOnlyList<string> ResolvePackageGdbDirectories(string extractionRoot, IReadOnlyList<string> fallbackGdbDirectories)
+        {
+            var requiredFolders = new[] { "测试1", "测试2", "测试3" };
+            var missingFolders = new List<string>();
+            var foundFolders = 0;
+            var test1Path = string.Empty;
+
+            foreach (var folderName in requiredFolders)
+            {
+                var matches = Directory.GetDirectories(extractionRoot, folderName, SearchOption.AllDirectories);
+                if (matches.Length == 0)
+                {
+                    missingFolders.Add(folderName);
+                    continue;
+                }
+
+                foundFolders++;
+                if (string.Equals(folderName, "测试1", StringComparison.OrdinalIgnoreCase))
+                {
+                    test1Path = matches[0];
+                }
+            }
+
+            if (foundFolders == 0)
+            {
+                PackageMode = "普通 .gdb ZIP";
+                StructureSummary = "未检测到 测试1/测试2/测试3 目录，已按普通 .gdb ZIP 处理。";
+                return fallbackGdbDirectories;
+            }
+
+            if (missingFolders.Count > 0)
+            {
+                throw new InvalidOperationException(string.Format("检测到部分标准测试目录，但缺少：{0}。", string.Join("、", missingFolders)));
+            }
+
+            if (string.IsNullOrWhiteSpace(test1Path))
+            {
+                throw new InvalidOperationException("未能定位测试1 目录。");
+            }
+
+            PackageMode = "标准测试包";
+            StructureSummary = "结构校验通过：已识别 测试1、测试2、测试3 目录，并优先分析 测试1 中的 .gdb 数据。";
+            return (IReadOnlyList<string>)Directory.GetDirectories(test1Path, "*.gdb", SearchOption.AllDirectories);
+        }
+
+        private void NotifyLayerStatisticsChanged()
+        {
+            OnPropertyChanged("LayerCount");
+            OnPropertyChanged("DisplayableLayerCount");
+            OnPropertyChanged("VisibleLayerCount");
+            OnPropertyChanged("CanLocateSelectedLayer");
         }
 
         private void InitializeMapControl()
@@ -377,6 +569,13 @@ namespace QualityCheckApp.Engine
                     RemoveLayerFromMap(info);
                 }
             }
+
+            if (SelectedLayer != null && !Layers.Contains(SelectedLayer))
+            {
+                SelectedLayer = null;
+            }
+
+            NotifyLayerStatisticsChanged();
         }
 
         private void OnLayerPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -388,6 +587,11 @@ namespace QualityCheckApp.Engine
                 {
                     UpdateLayerVisibility(info);
                 }
+            }
+
+            if (e.PropertyName == "IsVisible" || e.PropertyName == "Displayable")
+            {
+                NotifyLayerStatisticsChanged();
             }
         }
 
@@ -495,6 +699,14 @@ namespace QualityCheckApp.Engine
             if (info != null)
             {
                 ZoomToLayer(info);
+            }
+        }
+
+        private void OnLocateSelectedLayerClick(object sender, RoutedEventArgs e)
+        {
+            if (SelectedLayer != null)
+            {
+                ZoomToLayer(SelectedLayer);
             }
         }
 

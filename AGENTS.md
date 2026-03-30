@@ -4,10 +4,9 @@
 
 ## 仓库概况
 - 仓库根目录：`D:\WorkSpace\Work\QualityCheckApp.Engine`
-- 解决方案：`QualityCheckApp.Engine.sln`
+- 解决方案：`QualityCheckApp.Engine.sln`，当前只保留 `QualityCheckApp.Engine` 作为主线项目入口。
 - 主程序：`QualityCheckApp.Engine/`，WPF + ArcGIS Engine。
-- 集成演示程序：`QualityCheckApp.Integration/`，也是 WPF，可用于手工验证流程。
-- 旧示例程序：`MapControl/`，WinForms + ArcGIS 控件。
+- 仓库当前按单项目维护，不再保留独立的集成演示项目或旧 WinForms 地图壳工程。
 - 目标框架：`.NET Framework 4.5`
 - 编译平台：`x86`，不要擅自改成 `AnyCPU`。
 - 语言版本：`C# 5`，不要使用更高版本语法。
@@ -26,7 +25,7 @@
 - 推荐使用 Developer Command Prompt；若 `msbuild` 不在 `PATH`，直接调用完整路径。
 - 已验证可用的 MSBuild 路径：`C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe`
 - 项目默认 ArcGIS SDK 路径：`C:\Program Files (x86)\ArcGIS\DeveloperKit10.2\DotNet`
-- 三个 `.csproj` 都把 `WarningLevel` 设为 `4`。
+- 当前主线 `.csproj` 把 `WarningLevel` 设为 `4`。
 - 当前仓库没有 `packages.config`、`Directory.Build.props`、`.editorconfig`、Roslyn analyzer 配置。
 
 ## 构建命令
@@ -43,10 +42,6 @@
 & 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe' 'QualityCheckApp.Engine.sln' /t:Build /p:Configuration=Release /p:Platform=x86 /verbosity:minimal
 # 仅构建主应用
 & 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe' 'QualityCheckApp.Engine\QualityCheckApp.Engine.csproj' /t:Build /p:Configuration=Debug /p:Platform=x86
-# 仅构建集成演示程序
-& 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe' 'QualityCheckApp.Integration\QualityCheckApp.Integration.csproj' /t:Build /p:Configuration=Debug /p:Platform=x86
-# 仅构建旧 WinForms 示例
-& 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe' 'MapControl\MapControl.csproj' /t:Build /p:Configuration=Debug /p:Platform=x86
 # ArcGIS SDK 不在默认路径时
 & 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe' 'QualityCheckApp.Engine.sln' /t:Build /p:Configuration=Debug /p:Platform=x86 /p:ArcGisSdkPath='C:\custom\ArcGIS\DeveloperKit10.2\DotNet'
 ```
@@ -57,28 +52,24 @@
 - 当前最接近“lint”的检查就是完整编译并查看 Warning/Error。
 - 当前仓库没有自动化测试项目。
 - 没有 `MSTest`、`xUnit`、`NUnit`、`Microsoft.NET.Test.Sdk` 引用。
-- `QualityCheckApp.Integration` 是手工验证程序，不是测试程序集。
 - 因此没有 `dotnet test`、`vstest.console`、`mstest` 可直接运行的测试入口。
 
 ## 单个测试如何运行
 - 目前做不到，因为仓库里根本没有自动化测试用例。
 - 如果用户要求“跑一个测试”，先明确说明该仓库当前没有单测基础设施。
-- 不要把启动 `QualityCheckApp.Integration.exe` 说成“运行单个测试”。
 - 更准确的说法是“手工 smoke check”或“手工集成验证”。
 
 ## 手工验证建议
 - 先执行 Debug/x86 全量构建。
-- 再启动 `QualityCheckApp.Integration\bin\Debug\QualityCheckApp.Integration.exe`。
+- 再启动 `QualityCheckApp.Engine\bin\Debug\QualityCheckApp.Engine.exe`。
 - 准备一个包含测试目录和 `.gdb` 数据的 ZIP 包。
 - 验证 ZIP 选择、解压、结构校验、图层枚举、地图显示几个主流程。
-- 如修改了主应用 UI，也可启动 `QualityCheckApp.Engine\bin\Debug\QualityCheckApp.Engine.exe` 做同类验证。
 
 ## 代码组织
 - `Services/` 放 ArcGIS 许可、图层读取、ZIP 处理等逻辑。
 - `Models/` 放简单数据对象和 `INotifyPropertyChanged` 模型。
 - `Infrastructure/StaTask.cs` 用于把 ArcGIS 相关工作切到 STA 线程。
 - `MainWindow.xaml` 与对应 code-behind 承担 UI 和交互编排。
-- `MapControl/` 明显更旧，保留了 WinForms、`m_` 字段和 `#region` 风格。
 
 ## 代码风格
 
@@ -111,8 +102,7 @@
 ### 命名
 - 类型、方法、属性、事件使用 `PascalCase`。
 - 参数和局部变量使用 `camelCase`。
-- 主应用和集成应用的私有字段使用 `_camelCase`。
-- `MapControl/` 里的旧代码使用 `m_` 前缀；改动该目录时遵守局部既有风格。
+- 私有字段使用 `_camelCase`。
 - 接口以 `I` 开头，例如 `IGdbLayerProvider`。
 - 异步方法以 `Async` 结尾。
 - 事件处理器以 `On...` 或现有 WinForms 事件名模式命名。
@@ -139,21 +129,18 @@
 - 有绑定的属性通常要实现“值未变化直接返回”。
 - 字符串属性通常会把 `null` 归一成 `string.Empty`。
 - 修改 `Layers`、`IsBusy`、`SelectedZipPath` 等影响 UI 的状态时，记得同步触发相关属性通知。
-- 用户可见文字在主应用和集成应用中以中文为主；修改时跟随所在文件语境。
-- `MapControl/` 里是旧英文示例，不必强行中文化。
+- 用户可见文字以中文为主；修改时跟随所在文件语境。
 
 ### 生成文件与不建议手改的文件
 - 默认不要手改 `*.Designer.cs`。
 - 默认不要手改 `.resx`、`.settings`。
-- 默认不要手改 `QualityCheckApp.Engine.csproj.user`。
-- 除非用户明确要求，否则不要触碰 `.suo`、`bin/`、`obj/` 输出物。
+- 默认不要提交 `*.csproj.user`、`.suo`、`bin/`、`obj/` 这类本地生成物。
 
 ## 修改策略
 - 优先做最小正确修改。
 - 先复用现有服务和模型，再考虑新抽象。
 - 不要顺手升级框架、语言版本或项目格式。
 - 不要引入新包管理方式。
-- 如果只是修复主应用逻辑，尽量不要无关改动 `MapControl/`。
 - 如果新增可测试逻辑，优先放在 `Services/` 或 `Models/`，便于未来补测试。
 
 ## 提交前最低检查

@@ -1,4 +1,6 @@
 *.v11.suo
+*.suo
+*.csproj.user
 
 *.zip
 *.7z

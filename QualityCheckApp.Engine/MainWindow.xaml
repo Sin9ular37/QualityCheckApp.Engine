@@ -5,176 +5,515 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
-        Title="质检压缩包处理工具（ArcGIS Engine）"
-        Height="720"
-        Width="1200"
-        MinHeight="600"
-        MinWidth="960">
+        Title="质检地图工作台"
+        Height="820"
+        Width="1440"
+        MinHeight="720"
+        MinWidth="1180"
+        Background="#FF09111F">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+        <LinearGradientBrush x:Key="HeaderBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FF10203E" Offset="0" />
+            <GradientStop Color="#FF14305B" Offset="0.55" />
+            <GradientStop Color="#FF0B5A76" Offset="1" />
+        </LinearGradientBrush>
+
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#FF101A2F" />
+            <Setter Property="BorderBrush" Value="#223F6F91" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="18" />
+        </Style>
+
+        <Style x:Key="PanelTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FFF3F7FF" />
+        </Style>
+
+        <Style x:Key="MutedTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FF98A8C4" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#FFFFFFFF" />
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="#FF6BE3FF" />
+            <Setter Property="Foreground" Value="#FF04111F" />
+            <Setter Property="BorderBrush" Value="#FF6BE3FF" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Background" Value="#FF182742" />
+            <Setter Property="Foreground" Value="#FFF1F5FF" />
+            <Setter Property="BorderBrush" Value="#FF27456F" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*" />
-            <ColumnDefinition Width="2*" />
-        </Grid.ColumnDefinitions>
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0"
-                Margin="16"
-                CornerRadius="12"
-                Background="#FF1E1E2E"
-                BorderBrush="#FF2E2E3E"
+        <Border Grid.Row="0"
+                Margin="0,0,0,16"
+                Padding="22"
+                CornerRadius="22"
+                Background="{StaticResource HeaderBrush}"
+                BorderBrush="#3378E6FF"
                 BorderThickness="1">
             <Grid>
-                <wfi:WindowsFormsHost x:Name="MapHost" />
-                <TextBlock Text="AxMapControl 加载中..."
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="#66FFFFFF"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsMapReady}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.8*" />
+                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="1.4*" />
+                </Grid.ColumnDefinitions>
 
-                <Border HorizontalAlignment="Left"
-                        VerticalAlignment="Top"
-                        Margin="16"
-                        Padding="8"
-                        Background="#B3202033"
-                        CornerRadius="8">
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="放大"
-                                Width="64"
-                                Margin="0,0,8,0"
-                                Click="OnZoomInClick"
-                                IsEnabled="{Binding IsMapReady}" />
-                        <Button Content="缩小"
-                                Width="64"
-                                Margin="0,0,8,0"
-                                Click="OnZoomOutClick"
-                                IsEnabled="{Binding IsMapReady}" />
-                        <Button Content="全图"
-                                Width="64"
-                                Click="OnZoomFullExtentClick"
-                                IsEnabled="{Binding IsMapReady}" />
-                    </StackPanel>
-                </Border>
+                <StackPanel>
+                    <TextBlock Text="质检地图工作台"
+                               FontSize="28"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFFFF" />
+                    <TextBlock Text="统一入口处理普通 .gdb ZIP 与标准测试包，在同一窗口完成结构检查、图层识别和地图浏览。"
+                               Margin="0,10,0,0"
+                               FontSize="14"
+                               Foreground="#FFD6E4FF"
+                               TextWrapping="Wrap" />
 
-                <Border HorizontalAlignment="Left"
-                        VerticalAlignment="Bottom"
-                        Margin="16"
-                        Padding="8"
-                        Background="#B3202033"
-                        CornerRadius="8">
-                    <StackPanel>
-                        <TextBlock Text="{Binding MouseCoordinate}"
-                                   Foreground="#FFFFFFFF"
-                                   FontSize="12"
-                                   Margin="0,0,0,4" />
-                        <TextBlock Text="{Binding ScaleInfo}"
-                                   Foreground="#FFB9B9D5"
-                                   FontSize="12" />
-                    </StackPanel>
-                </Border>
+                    <WrapPanel Margin="0,18,0,0">
+                        <Border Margin="0,0,8,8"
+                                Padding="10,6"
+                                CornerRadius="14"
+                                Background="#221DFFEF">
+                            <TextBlock Text="单入口工作流" Foreground="#FFF2FFFF" FontWeight="SemiBold" />
+                        </Border>
+                        <Border Margin="0,0,8,8"
+                                Padding="10,6"
+                                CornerRadius="14"
+                                Background="#22FFF097">
+                            <TextBlock Text="支持标准测试包" Foreground="#FFFFFFFF" FontWeight="SemiBold" />
+                        </Border>
+                        <Border Margin="0,0,8,8"
+                                Padding="10,6"
+                                CornerRadius="14"
+                                Background="#22A7C5FF">
+                            <TextBlock Text="内置地图浏览" Foreground="#FFFFFFFF" FontWeight="SemiBold" />
+                        </Border>
+                    </WrapPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="18,0,18,0">
+                    <TextBlock Text="推荐流程"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFFFF" />
+                    <TextBlock Text="1. 选择 ZIP 压缩包"
+                               Margin="0,12,0,0"
+                               Foreground="#FFD6E4FF" />
+                    <TextBlock Text="2. 执行结构检查与图层识别"
+                               Margin="0,6,0,0"
+                               Foreground="#FFD6E4FF" />
+                    <TextBlock Text="3. 在地图中浏览并定位图层"
+                               Margin="0,6,0,0"
+                               Foreground="#FFD6E4FF" />
+                </StackPanel>
+
+                <Grid Grid.Column="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Margin="0,0,8,0"
+                            Padding="16"
+                            CornerRadius="16"
+                            Background="#22122338"
+                            BorderBrush="#22B3D9FF"
+                            BorderThickness="1">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="发现 .gdb"
+                                       Foreground="#FFD6E4FF"
+                                       FontSize="13" />
+                            <TextBlock Text="{Binding DetectedGdbCount}"
+                                       Margin="0,10,0,0"
+                                       Style="{StaticResource MetricValueStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Margin="4,0"
+                            Padding="16"
+                            CornerRadius="16"
+                            Background="#22122338"
+                            BorderBrush="#22B3D9FF"
+                            BorderThickness="1">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="识别图层"
+                                       Foreground="#FFD6E4FF"
+                                       FontSize="13" />
+                            <TextBlock Text="{Binding LayerCount}"
+                                       Margin="0,10,0,0"
+                                       Style="{StaticResource MetricValueStyle}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2"
+                            Margin="8,0,0,0"
+                            Padding="16"
+                            CornerRadius="16"
+                            Background="#22122338"
+                            BorderBrush="#22B3D9FF"
+                            BorderThickness="1">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="当前可见"
+                                       Foreground="#FFD6E4FF"
+                                       FontSize="13" />
+                            <TextBlock Text="{Binding VisibleLayerCount}"
+                                       Margin="0,10,0,0"
+                                       Style="{StaticResource MetricValueStyle}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
 
-        <Grid Grid.Column="1" Margin="16">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.85*" />
+                <ColumnDefinition Width="1.2*" />
+            </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="压缩包选择"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,8" />
-                <TextBlock Text="{Binding SelectedZipPath, TargetNullValue=尚未选择压缩包}"
-                           Foreground="#FF55556B"
-                           FontSize="14"
-                           TextWrapping="Wrap" />
-                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                    <Button Content="选择压缩包"
-                            Width="120"
-                            Margin="0,0,12,0"
-                            Click="OnSelectZipClick"
-                            IsEnabled="{Binding IsNotBusy}" />
-                    <Button Content="解析并加载"
-                            Width="120"
-                            Click="OnAnalyzeZipClick"
-                            IsEnabled="{Binding IsAnalyzeEnabled}" />
-                    <Button Content="清空结果"
-                            Width="120"
-                            Margin="12,0,0,0"
-                            Click="OnClearClick" />
-                </StackPanel>
-            </StackPanel>
+            <Border Grid.Column="0"
+                    Margin="0,0,16,0"
+                    Padding="0"
+                    Style="{StaticResource CardBorderStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="1" Margin="0,0,0,16">
-                <TextBlock Text="运行状态" FontSize="20" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding StatusMessage}"
-                           Margin="0,8,0,0"
-                           Foreground="#FF55556B"
-                           TextWrapping="Wrap" />
-                <ProgressBar Height="8"
-                             Margin="0,12,0,0"
-                             IsIndeterminate="{Binding IsBusy}"
-                             Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
-            </StackPanel>
+                    <Grid Grid.Row="0" Margin="18,16,18,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-            <GroupBox Grid.Row="2" Header="已解析的 .gdb 图层" Padding="8">
-                <DataGrid x:Name="LayersGrid"
-                          ItemsSource="{Binding Layers}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="False"
-                          HeadersVisibility="Column"
-                          AlternatingRowBackground="#FFEFF1F5"
-                          MouseDoubleClick="OnLayersGridDoubleClick">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="2*" />
-                        <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
-                        <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="Auto" />
-                        <DataGridCheckBoxColumn Header="地图可见"
-                                                 Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
-                                                 Width="Auto" />
-                        <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="3*" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
+                        <StackPanel>
+                            <TextBlock Text="GIS 地图视图" Style="{StaticResource PanelTitleStyle}" />
+                            <TextBlock Text="{Binding PackageMode, StringFormat=当前模式：{0}}"
+                                       Margin="0,6,0,0"
+                                       Style="{StaticResource MutedTextStyle}" />
+                        </StackPanel>
 
-            <TextBlock Grid.Row="3"
-                       Text="提示：左键拖动地图可平移，鼠标滚轮可缩放；可显示的图层会默认加载到地图，取消勾选即可隐藏。"
-                       Foreground="#FF9B9BB5"
-                       FontStyle="Italic"
-                       Margin="0,12,0,0" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="放大"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="72"
+                                    Click="OnZoomInClick"
+                                    IsEnabled="{Binding IsMapReady}" />
+                            <Button Content="缩小"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="72"
+                                    Click="OnZoomOutClick"
+                                    IsEnabled="{Binding IsMapReady}" />
+                            <Button Content="全图"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="78"
+                                    Margin="0"
+                                    Click="OnZoomFullExtentClick"
+                                    IsEnabled="{Binding IsMapReady}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1"
+                            Margin="18,0,18,18"
+                            CornerRadius="18"
+                            Background="#FF06101E"
+                            BorderBrush="#223A6685"
+                            BorderThickness="1">
+                        <Grid>
+                            <wfi:WindowsFormsHost x:Name="MapHost" />
+
+                            <Border HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="16"
+                                    Padding="10,6"
+                                    CornerRadius="14"
+                                    Background="#B2152740">
+                                <TextBlock Text="{Binding PackageMode}"
+                                           Foreground="#FFF4F8FF"
+                                           FontWeight="SemiBold" />
+                            </Border>
+
+                            <TextBlock Text="AxMapControl 加载中..."
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="#66FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMapReady}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <Border HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="16"
+                                    Padding="10"
+                                    CornerRadius="12"
+                                    Background="#B3122136">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding MouseCoordinate}"
+                                               Foreground="#FFFFFFFF"
+                                               FontSize="12"
+                                               Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding ScaleInfo}"
+                                               Foreground="#FFC0D0EB"
+                                               FontSize="12" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2"
+                            Margin="18,0,18,18"
+                            Padding="14,10"
+                            CornerRadius="14"
+                            Background="#FF0D1730">
+                        <TextBlock Text="地图交互：左键拖动平移，滚轮缩放；双击右侧图层或点击“定位选中”可快速聚焦。"
+                                   Foreground="#FFB8C7DF"
+                                   FontSize="13"
+                                   TextWrapping="Wrap" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0"
+                        Margin="0,0,0,12"
+                        Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="压缩包入口" Style="{StaticResource PanelTitleStyle}" />
+                        <TextBlock Text="{Binding SelectedZipPathDisplay}"
+                                   Margin="0,10,0,0"
+                                   Foreground="#FFD7E2F7"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="支持普通 .gdb ZIP；若压缩包中出现 测试1/测试2/测试3 目录，则自动切换到标准测试包校验模式。"
+                                   Margin="0,10,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <WrapPanel Margin="0,16,0,0">
+                            <Button Content="选择压缩包"
+                                    Width="126"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Click="OnSelectZipClick"
+                                    IsEnabled="{Binding IsNotBusy}" />
+                            <Button Content="开始检查"
+                                    Width="112"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Click="OnAnalyzeZipClick"
+                                    IsEnabled="{Binding IsAnalyzeEnabled}" />
+                            <Button Content="清空结果"
+                                    Width="102"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0"
+                                    Click="OnClearClick"
+                                    IsEnabled="{Binding IsNotBusy}" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1"
+                        Margin="0,0,0,12"
+                        Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="运行状态" Style="{StaticResource PanelTitleStyle}" />
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   Margin="0,10,0,0"
+                                   Foreground="#FFD7E2F7"
+                                   TextWrapping="Wrap" />
+                        <ProgressBar Height="8"
+                                     Margin="0,16,0,0"
+                                     IsIndeterminate="{Binding IsBusy}"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="2"
+                        Margin="0,0,0,12"
+                        Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="结构与识别结果" Style="{StaticResource PanelTitleStyle}" />
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Margin="0,0,8,0"
+                                    Padding="12"
+                                    CornerRadius="14"
+                                    Background="#FF0D1730">
+                                <StackPanel>
+                                    <TextBlock Text="识别模式"
+                                               Foreground="#FF8EA5C6"
+                                               FontSize="12" />
+                                    <TextBlock Text="{Binding PackageMode}"
+                                               Margin="0,6,0,0"
+                                               Foreground="#FFFFFFFF"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    Padding="12"
+                                    CornerRadius="14"
+                                    Background="#FF0D1730">
+                                <StackPanel>
+                                    <TextBlock Text="可显示图层"
+                                               Foreground="#FF8EA5C6"
+                                               FontSize="12" />
+                                    <TextBlock Text="{Binding DisplayableLayerCount}"
+                                               Margin="0,6,0,0"
+                                               Foreground="#FFFFFFFF"
+                                               FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="{Binding StructureSummary}"
+                                   Margin="0,12,0,0"
+                                   Foreground="#FFD7E2F7"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="3"
+                        Style="{StaticResource CardBorderStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="图层清单" Style="{StaticResource PanelTitleStyle}" />
+                                <TextBlock Text="双击图层可快速定位，勾选“地图可见”可控制地图显示。"
+                                           Margin="0,6,0,0"
+                                           Style="{StaticResource MutedTextStyle}" />
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Content="定位选中"
+                                    Width="104"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Margin="0"
+                                    Click="OnLocateSelectedLayerClick"
+                                    IsEnabled="{Binding CanLocateSelectedLayer}" />
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  x:Name="LayersGrid"
+                                  Margin="0,16,0,12"
+                                  ItemsSource="{Binding Layers}"
+                                  SelectedItem="{Binding SelectedLayer}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="False"
+                                  HeadersVisibility="Column"
+                                  RowHeaderWidth="0"
+                                  GridLinesVisibility="Horizontal"
+                                  Background="#FF0A1223"
+                                  Foreground="#FFF0F5FF"
+                                  BorderBrush="#FF233B5D"
+                                  AlternatingRowBackground="#FF0F1A30"
+                                  MouseDoubleClick="OnLayersGridDoubleClick">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="1.8*" />
+                                <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
+                                <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="74" />
+                                <DataGridCheckBoxColumn Header="地图可见"
+                                                        Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
+                                                        Width="82" />
+                                <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="2.4*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="2"
+                                   Text="旧模块能力已合并到当前主入口，后续操作均在本窗口完成。"
+                                   Foreground="#FF8EA5C6"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
-        <Border Grid.ColumnSpan="2"
-                Background="#AAFFFFFF"
-                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                CornerRadius="12" Margin="0,0,-0.4,0.4">
+        <Border Grid.RowSpan="2"
+                Background="#77070E1B"
+                CornerRadius="24"
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="正在处理，请稍候..."
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="#FF1F1F2F"
-                           HorizontalAlignment="Center" />
+                <Border Padding="18,14"
+                        CornerRadius="16"
+                        Background="#FF101A2F"
+                        BorderBrush="#334D8AB0"
+                        BorderThickness="1">
+                    <TextBlock Text="正在处理压缩包，请稍候..."
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#FFF4F8FF"
+                               HorizontalAlignment="Center" />
+                </Border>
             </StackPanel>
         </Border>
     </Grid>
