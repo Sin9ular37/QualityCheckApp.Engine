@@ -14,6 +14,7 @@ using System.Windows.Input;
 using ESRI.ArcGIS.Carto;
 using ESRI.ArcGIS.Controls;
 using ESRI.ArcGIS.Geometry;
+using ESRI.ArcGIS.SystemUI;
 using Microsoft.Win32;
 using QualityCheckApp.Engine.Models;
 using QualityCheckApp.Engine.Services;
@@ -28,6 +29,7 @@ namespace QualityCheckApp.Engine
         private readonly ObservableCollection<GdbLayerInfo> _layers;
 
         private AxMapControl _mapControl;
+        private ITool _mapPanTool;
         private ZipExtractionResult _currentExtraction;
         private string _selectedZipPath;
         private string _statusMessage = "请选择包含 File Geodatabase (.gdb) 的 ZIP 文件。";
@@ -292,6 +294,8 @@ namespace QualityCheckApp.Engine
                 {
                     MapHost.Child = _mapControl;
                 }
+
+                ConfigureMapNavigation();
                 IsMapReady = true;
                 return;
             }
@@ -300,10 +304,30 @@ namespace QualityCheckApp.Engine
             _mapControl.BeginInit();
             MapHost.Child = _mapControl;
             _mapControl.EndInit();
+            ConfigureMapNavigation();
             _mapControl.OnMouseMove += OnMapMouseMove;
             _mapControl.OnExtentUpdated += OnMapExtentUpdated;
             IsMapReady = true;
             UpdateScaleInfo();
+        }
+
+        private void ConfigureMapNavigation()
+        {
+            if (_mapControl == null)
+            {
+                return;
+            }
+
+            if (_mapPanTool == null)
+            {
+                _mapPanTool = new ControlsMapPanToolClass();
+                ESRI.ArcGIS.SystemUI.ICommand command = (ESRI.ArcGIS.SystemUI.ICommand)_mapPanTool;
+                command.OnCreate(_mapControl.Object);
+            }
+
+            _mapControl.CurrentTool = _mapPanTool;
+            _mapControl.MousePointer = esriControlsMousePointer.esriPointerPan;
+            _mapControl.AutoMouseWheel = true;
         }
 
         private void DisposeMapControl()
@@ -312,11 +336,18 @@ namespace QualityCheckApp.Engine
 
             if (_mapControl != null)
             {
+                _mapControl.CurrentTool = null;
                 _mapControl.OnMouseMove -= OnMapMouseMove;
                 _mapControl.OnExtentUpdated -= OnMapExtentUpdated;
                 MapHost.Child = null;
                 _mapControl.Dispose();
                 _mapControl = null;
+            }
+
+            if (_mapPanTool != null)
+            {
+                Marshal.ReleaseComObject(_mapPanTool);
+                _mapPanTool = null;
             }
 
             IsMapReady = false;

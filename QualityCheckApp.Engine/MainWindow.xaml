@@ -159,7 +159,7 @@
             </GroupBox>
 
             <TextBlock Grid.Row="3"
-                       Text="提示：可显示的图层会默认加载到地图，取消勾选即可隐藏。"
+                       Text="提示：左键拖动地图可平移，鼠标滚轮可缩放；可显示的图层会默认加载到地图，取消勾选即可隐藏。"
                        Foreground="#FF9B9BB5"
                        FontStyle="Italic"
                        Margin="0,12,0,0" />
