@@ -67,6 +67,22 @@
             <Setter Property="BorderBrush" Value="#FF27456F" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
+
+        <Style x:Key="WorkbenchTabItemStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#FFC7D5EC" />
+            <Setter Property="Background" Value="#FF0D1730" />
+            <Setter Property="BorderBrush" Value="#FF233B5D" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Foreground" Value="#FFFFFFFF" />
+                    <Setter Property="Background" Value="#FF173051" />
+                    <Setter Property="BorderBrush" Value="#FF4A7CB8" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="18">
@@ -94,7 +110,7 @@
                                FontSize="28"
                                FontWeight="SemiBold"
                                Foreground="#FFFFFFFF" />
-                    <TextBlock Text="统一入口处理普通 .gdb ZIP 与标准测试包，在同一窗口完成结构检查、图层识别和地图浏览。"
+                    <TextBlock Text="统一入口处理普通 .gdb ZIP 与标准测试包，在同一窗口完成结构检查、图层识别、拓扑检测和地图浏览。"
                                Margin="0,10,0,0"
                                FontSize="14"
                                Foreground="#FFD6E4FF"
@@ -431,69 +447,192 @@
 
                 <Border Grid.Row="3"
                         Style="{StaticResource CardBorderStyle}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <TabControl Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0">
+                        <TabItem Header="图层清单"
+                                 Style="{StaticResource WorkbenchTabItemStyle}">
+                            <Grid Margin="0,14,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                            <StackPanel>
-                                <TextBlock Text="图层清单" Style="{StaticResource PanelTitleStyle}" />
-                                <TextBlock Text="双击图层可快速定位，勾选“地图可见”可控制地图显示。"
-                                           Margin="0,6,0,0"
-                                           Style="{StaticResource MutedTextStyle}" />
-                            </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="图层清单" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="双击图层可快速定位，勾选“地图可见”可控制地图显示。"
+                                                   Margin="0,6,0,0"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                    </StackPanel>
 
-                            <Button Grid.Column="1"
-                                    Content="定位选中"
-                                    Width="104"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Margin="0"
-                                    Click="OnLocateSelectedLayerClick"
-                                    IsEnabled="{Binding CanLocateSelectedLayer}" />
-                        </Grid>
+                                    <Button Grid.Column="1"
+                                            Content="定位选中"
+                                            Width="104"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Margin="0"
+                                            Click="OnLocateSelectedLayerClick"
+                                            IsEnabled="{Binding CanLocateSelectedLayer}" />
+                                </Grid>
 
-                        <DataGrid Grid.Row="1"
-                                  x:Name="LayersGrid"
-                                  Margin="0,16,0,12"
-                                  ItemsSource="{Binding Layers}"
-                                  SelectedItem="{Binding SelectedLayer}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  IsReadOnly="False"
-                                  HeadersVisibility="Column"
-                                  RowHeaderWidth="0"
-                                  GridLinesVisibility="Horizontal"
-                                  Background="#FF0A1223"
-                                  Foreground="#FFF0F5FF"
-                                  BorderBrush="#FF233B5D"
-                                  AlternatingRowBackground="#FF0F1A30"
-                                  MouseDoubleClick="OnLayersGridDoubleClick">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="1.8*" />
-                                <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
-                                <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="74" />
-                                <DataGridCheckBoxColumn Header="地图可见"
-                                                        Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
-                                                        Width="82" />
-                                <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="2.4*" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                                <DataGrid Grid.Row="1"
+                                          x:Name="LayersGrid"
+                                          Margin="0,16,0,12"
+                                          ItemsSource="{Binding Layers}"
+                                          SelectedItem="{Binding SelectedLayer}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="False"
+                                          HeadersVisibility="Column"
+                                          RowHeaderWidth="0"
+                                          GridLinesVisibility="Horizontal"
+                                          Background="#FF0A1223"
+                                          Foreground="#FFF0F5FF"
+                                          BorderBrush="#FF233B5D"
+                                          AlternatingRowBackground="#FF0F1A30"
+                                          MouseDoubleClick="OnLayersGridDoubleClick">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="1.8*" />
+                                        <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
+                                        <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="74" />
+                                        <DataGridCheckBoxColumn Header="地图可见"
+                                                                Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
+                                                                Width="82" />
+                                        <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="2.4*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                        <TextBlock Grid.Row="2"
-                                   Text="旧模块能力已合并到当前主入口，后续操作均在本窗口完成。"
-                                   Foreground="#FF8EA5C6"
-                                   FontSize="12"
-                                   TextWrapping="Wrap" />
-                    </Grid>
+                                <TextBlock Grid.Row="2"
+                                           Text="旧模块能力已合并到当前主入口，后续操作均在本窗口完成。"
+                                           Foreground="#FF8EA5C6"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="拓扑问题"
+                                 Style="{StaticResource WorkbenchTabItemStyle}">
+                            <Grid Margin="0,14,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <TextBlock Text="拓扑检测" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="{Binding SelectedLayerDisplayName, StringFormat=当前图层：{0}}"
+                                                   Margin="0,6,0,0"
+                                                   Style="{StaticResource MutedTextStyle}" />
+                                    </StackPanel>
+
+                                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                                        <Button Content="检测选中图层"
+                                                Width="118"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Click="OnRunTopologyCheckClick"
+                                                IsEnabled="{Binding CanRunTopologyCheck}" />
+                                        <Button Content="定位选中问题"
+                                                Width="118"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Click="OnLocateSelectedTopologyIssueClick"
+                                                IsEnabled="{Binding CanLocateSelectedTopologyIssue}" />
+                                        <Button Content="清空问题"
+                                                Width="96"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0"
+                                                Click="OnClearTopologyClick"
+                                                IsEnabled="{Binding IsNotBusy}" />
+                                    </WrapPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1"
+                                        Margin="0,16,0,12"
+                                        Padding="12"
+                                        CornerRadius="14"
+                                        Background="#FF0D1730">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Width="74"
+                                                Height="74"
+                                                Margin="0,0,14,0"
+                                                CornerRadius="16"
+                                                Background="#FF173051"
+                                                BorderBrush="#334A7CB8"
+                                                BorderThickness="1">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="问题数"
+                                                           Foreground="#FF9CB2D1"
+                                                           FontSize="12"
+                                                           HorizontalAlignment="Center" />
+                                                <TextBlock Text="{Binding TopologyIssueCount}"
+                                                           Margin="0,8,0,0"
+                                                           Foreground="#FFFFFFFF"
+                                                           FontSize="24"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="1"
+                                                   VerticalAlignment="Center"
+                                                   Text="{Binding TopologySummary}"
+                                                   Foreground="#FFD7E2F7"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+
+                                <DataGrid Grid.Row="2"
+                                          x:Name="TopologyIssuesGrid"
+                                          ItemsSource="{Binding TopologyIssues}"
+                                          SelectedItem="{Binding SelectedTopologyIssue}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          RowHeaderWidth="0"
+                                          GridLinesVisibility="Horizontal"
+                                          Background="#FF0A1223"
+                                          Foreground="#FFF0F5FF"
+                                          BorderBrush="#FF233B5D"
+                                          AlternatingRowBackground="#FF0F1A30"
+                                          MouseDoubleClick="OnTopologyIssuesGridDoubleClick">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="规则" Binding="{Binding RuleName}" Width="108" />
+                                        <DataGridTextColumn Header="要素OID" Binding="{Binding FeatureId}" Width="74" />
+                                        <DataGridTextColumn Header="相关OID" Binding="{Binding RelatedFeatureId}" Width="74" />
+                                        <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <TextBlock Grid.Row="3"
+                                           Margin="0,12,0,0"
+                                           Text="当前版本已内置空几何、非简单几何、重复点和面重叠等基础规则；双击问题可缩放到问题范围。"
+                                           Foreground="#FF8EA5C6"
+                                           FontSize="12"
+                                           TextWrapping="Wrap" />
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
                 </Border>
             </Grid>
         </Grid>

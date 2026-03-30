@@ -119,6 +119,8 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\GdbLayerInfo.cs" />
+    <Compile Include="Models\TopologyCheckResult.cs" />
+    <Compile Include="Models\TopologyIssueInfo.cs" />
     <Compile Include="Models\ZipExtractionResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -128,7 +130,9 @@
     </Compile>
     <Compile Include="Services\ArcGisLayerProvider.cs" />
     <Compile Include="Services\ArcGisLicenseInitializer.cs" />
+    <Compile Include="Services\ArcGisTopologyCheckService.cs" />
     <Compile Include="Services\IGdbLayerProvider.cs" />
+    <Compile Include="Services\ITopologyCheckService.cs" />
     <Compile Include="Services\ZipPackageService.cs" />
   </ItemGroup>
 

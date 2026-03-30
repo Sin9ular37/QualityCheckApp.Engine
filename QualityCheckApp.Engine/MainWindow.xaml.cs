@@ -25,19 +25,23 @@ namespace QualityCheckApp.Engine
     {
         private readonly ZipPackageService _zipService = new ZipPackageService();
         private readonly IGdbLayerProvider _layerProvider = new ArcGisLayerProvider();
+        private readonly ITopologyCheckService _topologyCheckService = new ArcGisTopologyCheckService();
         private readonly Dictionary<GdbLayerInfo, ILayer> _mapLayers = new Dictionary<GdbLayerInfo, ILayer>();
         private readonly ObservableCollection<GdbLayerInfo> _layers;
+        private readonly ObservableCollection<TopologyIssueInfo> _topologyIssues;
 
         private AxMapControl _mapControl;
         private ITool _mapPanTool;
         private ZipExtractionResult _currentExtraction;
         private GdbLayerInfo _selectedLayer;
+        private TopologyIssueInfo _selectedTopologyIssue;
         private string _selectedZipPath;
         private string _statusMessage = "请选择 ZIP 压缩包。支持普通 .gdb ZIP 和标准测试包。";
         private string _mouseCoordinate = "当前坐标：--";
         private string _scaleInfo = "比例尺：--";
         private string _packageMode = "待识别";
         private string _structureSummary = "尚未执行压缩包检查。";
+        private string _topologySummary = "请选择图层并执行拓扑检测。";
         private int _detectedGdbCount;
         private bool _isBusy;
         private bool _isMapReady;
@@ -51,6 +55,8 @@ namespace QualityCheckApp.Engine
             _layers = new ObservableCollection<GdbLayerInfo>();
             Layers.CollectionChanged += OnLayersCollectionChanged;
 
+            _topologyIssues = new ObservableCollection<TopologyIssueInfo>();
+
             DataContext = this;
 
             Loaded += OnWindowLoaded;
@@ -60,6 +66,11 @@ namespace QualityCheckApp.Engine
         public ObservableCollection<GdbLayerInfo> Layers
         {
             get { return _layers; }
+        }
+
+        public ObservableCollection<TopologyIssueInfo> TopologyIssues
+        {
+            get { return _topologyIssues; }
         }
 
         public string SelectedZipPath
@@ -95,8 +106,32 @@ namespace QualityCheckApp.Engine
                 }
 
                 _selectedLayer = value;
+                ClearTopologyResults();
                 OnPropertyChanged("SelectedLayer");
+                OnPropertyChanged("SelectedLayerDisplayName");
                 OnPropertyChanged("CanLocateSelectedLayer");
+                OnPropertyChanged("CanRunTopologyCheck");
+            }
+        }
+
+        public string SelectedLayerDisplayName
+        {
+            get { return SelectedLayer == null ? "未选择图层" : SelectedLayer.LayerName; }
+        }
+
+        public TopologyIssueInfo SelectedTopologyIssue
+        {
+            get { return _selectedTopologyIssue; }
+            set
+            {
+                if (_selectedTopologyIssue == value)
+                {
+                    return;
+                }
+
+                _selectedTopologyIssue = value;
+                OnPropertyChanged("SelectedTopologyIssue");
+                OnPropertyChanged("CanLocateSelectedTopologyIssue");
             }
         }
 
@@ -130,6 +165,8 @@ namespace QualityCheckApp.Engine
                 OnPropertyChanged("IsAnalyzeEnabled");
                 OnPropertyChanged("IsNotBusy");
                 OnPropertyChanged("CanLocateSelectedLayer");
+                OnPropertyChanged("CanRunTopologyCheck");
+                OnPropertyChanged("CanLocateSelectedTopologyIssue");
             }
         }
 
@@ -141,6 +178,11 @@ namespace QualityCheckApp.Engine
         public bool IsAnalyzeEnabled
         {
             get { return !IsBusy && !string.IsNullOrWhiteSpace(SelectedZipPath); }
+        }
+
+        public bool CanRunTopologyCheck
+        {
+            get { return !IsBusy && SelectedLayer != null; }
         }
 
         public string PackageMode
@@ -170,6 +212,21 @@ namespace QualityCheckApp.Engine
 
                 _structureSummary = value ?? string.Empty;
                 OnPropertyChanged("StructureSummary");
+            }
+        }
+
+        public string TopologySummary
+        {
+            get { return _topologySummary; }
+            private set
+            {
+                if (_topologySummary == value)
+                {
+                    return;
+                }
+
+                _topologySummary = value ?? string.Empty;
+                OnPropertyChanged("TopologySummary");
             }
         }
 
@@ -227,9 +284,19 @@ namespace QualityCheckApp.Engine
             }
         }
 
+        public int TopologyIssueCount
+        {
+            get { return TopologyIssues.Count; }
+        }
+
         public bool CanLocateSelectedLayer
         {
             get { return !IsBusy && IsMapReady && SelectedLayer != null && SelectedLayer.Displayable; }
+        }
+
+        public bool CanLocateSelectedTopologyIssue
+        {
+            get { return !IsBusy && IsMapReady && SelectedTopologyIssue != null && SelectedTopologyIssue.HasFocusExtent; }
         }
 
         public bool IsMapReady
@@ -245,6 +312,7 @@ namespace QualityCheckApp.Engine
                 _isMapReady = value;
                 OnPropertyChanged("IsMapReady");
                 OnPropertyChanged("CanLocateSelectedLayer");
+                OnPropertyChanged("CanLocateSelectedTopologyIssue");
             }
         }
 
@@ -365,6 +433,32 @@ namespace QualityCheckApp.Engine
             StatusMessage = "已清空结果。";
         }
 
+        private async void OnRunTopologyCheckClick(object sender, RoutedEventArgs e)
+        {
+            if (SelectedLayer == null)
+            {
+                StatusMessage = "请先在图层清单中选择一个图层。";
+                return;
+            }
+
+            await RunWithBusyIndicator(async token =>
+            {
+                StatusMessage = string.Format("正在检测图层 {0} 的拓扑问题...", SelectedLayer.LayerName);
+                ClearTopologyResults();
+
+                var result = await _topologyCheckService.CheckLayerAsync(SelectedLayer, token);
+                ApplyTopologyResult(result);
+
+                StatusMessage = string.Format("拓扑检测完成：{0}", TopologySummary);
+            });
+        }
+
+        private void OnClearTopologyClick(object sender, RoutedEventArgs e)
+        {
+            ClearTopologyResults();
+            StatusMessage = "已清空拓扑检测结果。";
+        }
+
         private async Task RunWithBusyIndicator(Func<CancellationToken, Task> operation)
         {
             if (IsBusy)
@@ -415,6 +509,7 @@ namespace QualityCheckApp.Engine
             _currentExtraction = null;
 
             ResetInspectionSummary();
+            ClearTopologyResults();
         }
 
         private void ResetInspectionSummary()
@@ -423,6 +518,39 @@ namespace QualityCheckApp.Engine
             PackageMode = "待识别";
             StructureSummary = "尚未执行压缩包检查。";
             NotifyLayerStatisticsChanged();
+        }
+
+        private void ClearTopologyResults()
+        {
+            SelectedTopologyIssue = null;
+            TopologyIssues.Clear();
+            TopologySummary = "请选择图层并执行拓扑检测。";
+            NotifyTopologyStateChanged();
+        }
+
+        private void ApplyTopologyResult(TopologyCheckResult result)
+        {
+            if (result == null)
+            {
+                ClearTopologyResults();
+                return;
+            }
+
+            SelectedTopologyIssue = null;
+            TopologyIssues.Clear();
+            foreach (var issue in result.Issues)
+            {
+                TopologyIssues.Add(issue);
+            }
+
+            TopologySummary = result.Summary;
+            NotifyTopologyStateChanged();
+        }
+
+        private void NotifyTopologyStateChanged()
+        {
+            OnPropertyChanged("TopologyIssueCount");
+            OnPropertyChanged("CanLocateSelectedTopologyIssue");
         }
 
         private IReadOnlyList<string> ResolvePackageGdbDirectories(string extractionRoot, IReadOnlyList<string> fallbackGdbDirectories)
@@ -710,6 +838,29 @@ namespace QualityCheckApp.Engine
             }
         }
 
+        private void OnLocateSelectedTopologyIssueClick(object sender, RoutedEventArgs e)
+        {
+            if (SelectedTopologyIssue != null)
+            {
+                ZoomToTopologyIssue(SelectedTopologyIssue);
+            }
+        }
+
+        private void OnTopologyIssuesGridDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var grid = sender as DataGrid;
+            if (grid == null)
+            {
+                return;
+            }
+
+            var issue = grid.SelectedItem as TopologyIssueInfo;
+            if (issue != null)
+            {
+                ZoomToTopologyIssue(issue);
+            }
+        }
+
         private void ZoomToAllLayers()
         {
             if (_mapControl == null)
@@ -774,7 +925,7 @@ namespace QualityCheckApp.Engine
 
             if (!info.Displayable)
             {
-            StatusMessage = string.Format("{0} 无法在地图上显示。", info.LayerName);
+                StatusMessage = string.Format("{0} 无法在地图上显示。", info.LayerName);
                 return;
             }
 
@@ -803,6 +954,100 @@ namespace QualityCheckApp.Engine
             _mapControl.Refresh();
             UpdateScaleInfo();
             StatusMessage = string.Format("已定位到图层：{0}", info.LayerName);
+        }
+
+        private void ZoomToTopologyIssue(TopologyIssueInfo issue)
+        {
+            if (_mapControl == null || issue == null || !issue.HasFocusExtent)
+            {
+                return;
+            }
+
+            var layerInfo = FindLayerInfoForIssue(issue);
+            if (layerInfo != null && layerInfo.Displayable && !layerInfo.IsVisible)
+            {
+                layerInfo.IsVisible = true;
+            }
+
+            IEnvelope envelope = null;
+            try
+            {
+                envelope = CreateFocusEnvelope(issue);
+                if (envelope == null || envelope.IsEmpty)
+                {
+                    return;
+                }
+
+                _mapControl.Extent = envelope;
+                _mapControl.Refresh();
+                UpdateScaleInfo();
+                StatusMessage = string.Format("已定位到拓扑问题：{0}", issue.RuleName);
+            }
+            finally
+            {
+                if (envelope != null)
+                {
+                    Marshal.ReleaseComObject(envelope);
+                }
+            }
+        }
+
+        private GdbLayerInfo FindLayerInfoForIssue(TopologyIssueInfo issue)
+        {
+            foreach (var layer in Layers)
+            {
+                if (string.Equals(layer.GdbPath, issue.GdbPath, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(layer.DatasetName, issue.DatasetName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return layer;
+                }
+            }
+
+            return null;
+        }
+
+        private IEnvelope CreateFocusEnvelope(TopologyIssueInfo issue)
+        {
+            var envelope = new EnvelopeClass();
+            envelope.PutCoords(issue.FocusXMin, issue.FocusYMin, issue.FocusXMax, issue.FocusYMax);
+
+            if (envelope.IsEmpty)
+            {
+                return envelope;
+            }
+
+            double xMin;
+            double yMin;
+            double xMax;
+            double yMax;
+            envelope.QueryCoords(out xMin, out yMin, out xMax, out yMax);
+
+            if (xMin == xMax || yMin == yMax)
+            {
+                double baseWidth = 10;
+                double baseHeight = 10;
+
+                if (_mapControl != null && _mapControl.Extent != null && !_mapControl.Extent.IsEmpty)
+                {
+                    double currentXMin;
+                    double currentYMin;
+                    double currentXMax;
+                    double currentYMax;
+                    _mapControl.Extent.QueryCoords(out currentXMin, out currentYMin, out currentXMax, out currentYMax);
+                    baseWidth = Math.Max((currentXMax - currentXMin) * 0.08, 10);
+                    baseHeight = Math.Max((currentYMax - currentYMin) * 0.08, 10);
+                }
+
+                var centerX = (xMin + xMax) / 2.0;
+                var centerY = (yMin + yMax) / 2.0;
+                envelope.PutCoords(centerX - baseWidth / 2.0, centerY - baseHeight / 2.0, centerX + baseWidth / 2.0, centerY + baseHeight / 2.0);
+            }
+            else
+            {
+                envelope.Expand(1.4, 1.4, true);
+            }
+
+            return envelope;
         }
 
         private void OnMapMouseMove(object sender, IMapControlEvents2_OnMouseMoveEvent e)
