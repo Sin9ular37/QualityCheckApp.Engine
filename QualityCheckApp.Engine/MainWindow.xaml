@@ -134,7 +134,7 @@
                                FontSize="28"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="当前分支已剥离 ArcGIS Engine、ArcObjects、AxMapControl 与官方几何检查工具，保留 ZIP 结构校验和 File Geodatabase 目录级检查能力。"
+                    <TextBlock Text="当前分支已剥离 ArcGIS Engine、ArcObjects、AxMapControl 与官方几何检查工具，保留 ZIP 结构校验，并已接入 GDAL/OGR 图层读取与 NetTopologySuite 几何验证。"
                                Margin="0,10,0,0"
                                FontSize="14"
                                Foreground="{StaticResource PrimaryTextBrush}"
@@ -157,7 +157,7 @@
                                 Padding="10,6"
                                 CornerRadius="14"
                                 Background="#FFEFEFFF">
-                            <TextBlock Text="目录级 GDB 检查" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="GDAL 图层读取" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
                         </Border>
                     </WrapPanel>
                 </StackPanel>
@@ -170,7 +170,7 @@
                     <TextBlock Text="1. ZIP 解压与结构校验"
                                Margin="0,12,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="2. .gdb 容器识别与摘要"
+                    <TextBlock Text="2. .gdb 图层识别与摘要"
                                Margin="0,6,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
                     <TextBlock Text="3. 核心元数据与表文件检查"
@@ -261,7 +261,7 @@
 
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="无 ArcGIS 依赖模式" Style="{StaticResource PanelTitleStyle}" />
-                        <TextBlock Text="这个分支不再尝试加载地图或解析 ArcGIS COM 对象，而是聚焦于 ZIP 结构和 File Geodatabase 目录完整性。"
+                        <TextBlock Text="这个分支不再尝试加载地图或解析 ArcGIS COM 对象，而是聚焦于 ZIP 结构、GDAL/OGR 图层读取和后续开源 GIS 替换路径。"
                                    Margin="0,8,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
@@ -298,7 +298,7 @@
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="选中容器" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
+                                <TextBlock Text="选中图层" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
                                 <TextBlock Text="{Binding SelectedLayerDisplayName}"
                                            Margin="0,8,0,0"
                                            FontSize="18"
@@ -316,7 +316,7 @@
                                 BorderBrush="{StaticResource BorderBrush}"
                                 BorderThickness="1">
                             <StackPanel>
-                                <TextBlock Text="目录问题" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
+                                <TextBlock Text="几何问题" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
                                 <TextBlock Text="{Binding TopologyIssueCount}"
                                            Margin="0,8,0,0"
                                            FontSize="18"
@@ -335,25 +335,76 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="工作区摘要"
-                                       Style="{StaticResource PanelTitleStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Row="1"
-                                       Margin="0,12,0,0"
-                                       Text="{Binding StructureSummary}"
-                                       Style="{StaticResource MutedTextStyle}" />
+                                <StackPanel>
+                                    <TextBlock Text="开源地图预览" Style="{StaticResource PanelTitleStyle}" />
+                                    <TextBlock Text="Mapsui 当前支持两层预览：一层是真实几何，一层是选中图层/问题的范围框。"
+                                               Margin="0,8,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
 
-                            <TextBlock Grid.Row="2"
-                                       Margin="0,12,0,0"
-                                       Text="{Binding SelectedLayerSummary}"
-                                       Style="{StaticResource MutedTextStyle}" />
+                                <StackPanel Grid.Column="1">
+                                    <Border HorizontalAlignment="Right"
+                                            Padding="10,6"
+                                            CornerRadius="14"
+                                            Background="{StaticResource AccentSurfaceBrush}"
+                                            BorderBrush="{StaticResource BorderStrongBrush}"
+                                            BorderThickness="1">
+                                        <TextBlock Text="{Binding PackageMode}"
+                                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                                   FontWeight="SemiBold" />
+                                    </Border>
+                                    <WrapPanel HorizontalAlignment="Right" Margin="0,10,0,0">
+                                        <Button Content="加载真实几何"
+                                                Width="112"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Click="OnLoadGeometryPreviewClick"
+                                                IsEnabled="{Binding CanLoadGeometryPreview}" />
+                                        <Button Content="清空预览"
+                                                Width="96"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0"
+                                                Click="OnClearGeometryPreviewClick"
+                                                IsEnabled="{Binding IsNotBusy}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Grid>
 
-                            <Border Grid.Row="3"
+                            <Border Grid.Row="1"
+                                    Margin="0,18,0,0"
+                                    CornerRadius="16"
+                                    Background="#FFFDFEFF"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1">
+                                <Grid>
+                                    <Grid x:Name="PreviewMapHost" />
+
+                                    <Border HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Margin="14"
+                                            Padding="10,8"
+                                            CornerRadius="12"
+                                            Background="#EEF8FBFF"
+                                            BorderBrush="{StaticResource BorderBrush}"
+                                            BorderThickness="1">
+                                        <TextBlock Text="{Binding MapPreviewSummary}"
+                                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Width="250" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2"
                                     Margin="0,18,0,0"
                                     Padding="14"
                                     CornerRadius="16"
@@ -361,19 +412,19 @@
                                     BorderBrush="{StaticResource BorderStrongBrush}"
                                     BorderThickness="1">
                                 <StackPanel>
-                                    <TextBlock Text="分支说明"
+                                    <TextBlock Text="预览说明"
                                                FontSize="14"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource PrimaryTextBrush}" />
-                                    <TextBlock Text="1. 已去掉 ArcGIS Engine Runtime、AxMapControl、ArcObjects 数据读取与许可初始化。"
+                                    <TextBlock Text="1. 点击“加载真实几何”后，会把当前选中图层的真实点/线/面渲染到 Mapsui。"
                                                Margin="0,10,0,0"
                                                Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="2. 当前仅对 ZIP 与 .gdb 目录结构做无依赖检查，不再提供地图浏览与官方几何校验。"
+                                    <TextBlock Text="2. 蓝色范围框表示当前选中图层的整体范围。"
                                                Margin="0,6,0,0"
                                                Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="3. 已补开源 GIS 替代骨架，后续优先对接 GDAL/OGR、NetTopologySuite、Mapsui。"
-                                               Margin="0,6,0,0"
-                                               Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="3. 红色范围框表示当前选中几何问题的位置范围。"
+                                                Margin="0,6,0,0"
+                                                Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -384,7 +435,7 @@
                             Padding="14,10"
                             CornerRadius="14"
                             Background="#FFF3F7FB">
-                        <TextBlock Text="该工作台适合在无 ArcGIS 环境下做压缩包入库前检查，帮助先识别 ZIP 结构和 GDB 目录是否完整。"
+                        <TextBlock Text="该工作台适合在无 ArcGIS 环境下做压缩包入库前检查，先识别 ZIP 结构，再读取 GDB 图层并检查几何问题。"
                                    Foreground="{StaticResource PrimaryTextBrush}"
                                    FontSize="13"
                                    TextWrapping="Wrap" />
@@ -453,7 +504,7 @@
                         Margin="0,0,0,12"
                         Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="结构结果" Style="{StaticResource PanelTitleStyle}" />
+                        <TextBlock Text="检查结果" Style="{StaticResource PanelTitleStyle}" />
                         <TextBlock Text="{Binding StructureSummary}"
                                    Margin="0,12,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
@@ -472,7 +523,7 @@
                                 Foreground="{StaticResource PrimaryTextBrush}"
                                 BorderThickness="0"
                                 Padding="0">
-                        <TabItem Header="GDB 容器"
+                        <TabItem Header="GDB 图层"
                                  Style="{StaticResource WorkbenchTabItemStyle}">
                             <Grid Margin="0,14,0,0">
                                 <Grid.RowDefinitions>
@@ -487,14 +538,14 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel>
-                                        <TextBlock Text="GDB 容器清单" Style="{StaticResource PanelTitleStyle}" />
-                                        <TextBlock Text="每个条目代表一个 .gdb 目录，当前只做目录层面的元数据与表文件检查。"
+                                        <TextBlock Text="GDB 图层清单" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="每个条目代表 GDAL/OGR 从 .gdb 中枚举到的一个图层；当前已能读取图层名、几何类型与要素数量。"
                                                    Margin="0,6,0,0"
                                                    Style="{StaticResource MutedTextStyle}" />
                                     </StackPanel>
 
                                     <Button Grid.Column="1"
-                                            Content="检查选中容器"
+                                            Content="检查选中图层"
                                             Width="118"
                                             Style="{StaticResource SecondaryButtonStyle}"
                                             Margin="0"
@@ -525,7 +576,7 @@
                             </Grid>
                         </TabItem>
 
-                        <TabItem Header="目录检查"
+                        <TabItem Header="结构检查"
                                  Style="{StaticResource WorkbenchTabItemStyle}">
                             <Grid Margin="0,14,0,0">
                                 <Grid.RowDefinitions>
@@ -541,8 +592,8 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel>
-                                        <TextBlock Text="目录检查结果" Style="{StaticResource PanelTitleStyle}" />
-                                        <TextBlock Text="输出的是无 ArcGIS 依赖的目录问题，而不是几何自相交或拓扑规则结果。"
+                                        <TextBlock Text="几何检查结果" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="这里会输出当前图层的几何检查问题，包括空几何、无效几何、自相交/环自相交和非简单几何。"
                                                    Margin="0,6,0,0"
                                                    Style="{StaticResource MutedTextStyle}" />
                                     </StackPanel>
@@ -597,6 +648,7 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
@@ -617,7 +669,75 @@
                                                TextWrapping="Wrap" />
                                 </Border>
 
-                                <DataGrid Grid.Row="2"
+                                <Border Grid.Row="2"
+                                        Margin="0,0,0,12"
+                                        Padding="12"
+                                        CornerRadius="14"
+                                        Background="{StaticResource AccentSurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderStrongBrush}"
+                                        BorderThickness="1">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel>
+                                                <TextBlock Text="NetTopologySuite WKT 验证"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{StaticResource PrimaryTextBrush}" />
+                                                <TextBlock Text="这里保留一个独立的 WKT 验证入口，用来单独确认 NetTopologySuite 的几何规则判断行为。"
+                                                           Margin="0,6,0,0"
+                                                           Style="{StaticResource MutedTextStyle}" />
+                                            </StackPanel>
+
+                                            <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                <Button Content="加载示例"
+                                                        Width="96"
+                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                        Click="OnLoadSampleWktClick" />
+                                                <Button Content="验证 WKT"
+                                                        Width="96"
+                                                        Style="{StaticResource SecondaryButtonStyle}"
+                                                        Margin="0"
+                                                        Click="OnValidateWktClick" />
+                                            </WrapPanel>
+                                        </Grid>
+
+                                        <TextBox Grid.Row="1"
+                                                 Margin="0,12,0,0"
+                                                 MinHeight="92"
+                                                 Padding="10"
+                                                 Text="{Binding WktInput, UpdateSourceTrigger=PropertyChanged}"
+                                                 TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 AcceptsReturn="True" />
+
+                                        <TextBlock Grid.Row="2"
+                                                   Margin="0,12,0,0"
+                                                   Text="{Binding WktValidationSummary}"
+                                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap" />
+
+                                        <TextBlock Grid.Row="3"
+                                                   Margin="0,8,0,0"
+                                                   Text="{Binding WktValidationDetail}"
+                                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+
+                                <DataGrid Grid.Row="3"
                                           ItemsSource="{Binding OpenSourceModules}"
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"

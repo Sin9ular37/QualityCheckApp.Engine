@@ -10,12 +10,19 @@ namespace QualityCheckApp.Engine.Services
 {
     public class GdbDirectoryInspectorService
     {
-        public Task<IReadOnlyList<GdbLayerInfo>> InspectAsync(IReadOnlyList<string> gdbDirectories, CancellationToken cancellationToken)
+        private readonly IGeometryDatasetReader _datasetReader;
+
+        public GdbDirectoryInspectorService()
         {
-            return Task.Run(() => Inspect(gdbDirectories, cancellationToken), cancellationToken);
+            _datasetReader = new GdalOgrDatasetReader();
         }
 
-        private static IReadOnlyList<GdbLayerInfo> Inspect(IReadOnlyList<string> gdbDirectories, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<GdbLayerInfo>> InspectAsync(IReadOnlyList<string> gdbDirectories, CancellationToken cancellationToken)
+        {
+            return InspectInternalAsync(gdbDirectories, cancellationToken);
+        }
+
+        private async Task<IReadOnlyList<GdbLayerInfo>> InspectInternalAsync(IReadOnlyList<string> gdbDirectories, CancellationToken cancellationToken)
         {
             var results = new List<GdbLayerInfo>();
             if (gdbDirectories == null)
@@ -27,32 +34,27 @@ namespace QualityCheckApp.Engine.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var files = Directory.Exists(gdbPath)
-                    ? Directory.GetFiles(gdbPath, "*", SearchOption.TopDirectoryOnly)
-                    : new string[0];
-                var tableFiles = Directory.Exists(gdbPath)
-                    ? Directory.GetFiles(gdbPath, "*.gdbtable", SearchOption.TopDirectoryOnly)
-                    : new string[0];
-                var indexFiles = Directory.Exists(gdbPath)
-                    ? Directory.GetFiles(gdbPath, "*.gdbindexes", SearchOption.TopDirectoryOnly)
-                    : new string[0];
-                var hasMetadata = File.Exists(Path.Combine(gdbPath, "gdb"));
-                var hasTimestamp = File.Exists(Path.Combine(gdbPath, "timestamps"));
-                var isInspectable = hasMetadata && hasTimestamp && tableFiles.Length > 0;
-
-                results.Add(new GdbLayerInfo
+                try
                 {
-                    GdbPath = gdbPath,
-                    DatasetName = "File Geodatabase",
-                    LayerName = Path.GetFileNameWithoutExtension(gdbPath),
-                    GeometryType = string.Format("{0} 个表文件 / {1} 个索引文件", tableFiles.Length, indexFiles.Length),
-                    Summary = string.Format("目录文件数：{0}；核心元数据：{1}；时间戳：{2}",
-                        files.Length,
-                        hasMetadata ? "是" : "否",
-                        hasTimestamp ? "是" : "否"),
-                    Displayable = isInspectable,
-                    IsVisible = isInspectable
-                });
+                    var layers = await _datasetReader.ReadContainersAsync(gdbPath, cancellationToken);
+                    foreach (var layer in layers)
+                    {
+                        results.Add(layer);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    results.Add(new GdbLayerInfo
+                    {
+                        GdbPath = gdbPath,
+                        DatasetName = "OpenFileGDB",
+                        LayerName = Path.GetFileNameWithoutExtension(gdbPath),
+                        GeometryType = "读取失败",
+                        Summary = string.Format("GDAL/OGR 读取失败：{0}", ex.Message),
+                        Displayable = false,
+                        IsVisible = false
+                    });
+                }
             }
 
             return results;

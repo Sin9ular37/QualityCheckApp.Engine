@@ -15,8 +15,8 @@ namespace QualityCheckApp.Engine.Services
                     ModuleName = "数据读取适配器",
                     PlannedLibrary = "GDAL/OGR",
                     Responsibility = "读取 File Geodatabase、枚举要素类与字段。",
-                    Status = "接口骨架已建立",
-                    NextStep = "引入 GDAL/OGR 包并替换 PlaceholderGdalDatasetReader。",
+                    Status = "已接入 OpenFileGDB 读取",
+                    NextStep = "继续补字段、坐标系和几何对象转换。",
                     IsScaffolded = true
                 },
                 new OpenSourceModuleInfo
@@ -24,8 +24,8 @@ namespace QualityCheckApp.Engine.Services
                     ModuleName = "几何校验适配器",
                     PlannedLibrary = "NetTopologySuite",
                     Responsibility = "承接简单几何校验与后续拓扑规则实现。",
-                    Status = "接口骨架已建立",
-                    NextStep = "在读取层可用后实现 ValidateAsync。",
+                    Status = "已接入 WKT 校验",
+                    NextStep = "把 GDAL/OGR 读取到的几何转换为 NTS 对象。",
                     IsScaffolded = true
                 },
                 new OpenSourceModuleInfo
@@ -33,8 +33,8 @@ namespace QualityCheckApp.Engine.Services
                     ModuleName = "地图视口适配器",
                     PlannedLibrary = "Mapsui",
                     Responsibility = "替代 AxMapControl，提供平移、缩放、定位和问题浏览。",
-                    Status = "接口骨架已建立",
-                    NextStep = "接入 Mapsui WPF 控件并补充图层渲染。",
+                    Status = "已接入几何预览",
+                    NextStep = "继续补问题点位高亮和底图支持。",
                     IsScaffolded = true
                 },
                 new OpenSourceModuleInfo

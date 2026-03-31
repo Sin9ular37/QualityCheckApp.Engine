@@ -6,5 +6,8 @@
 *.7z
 *.rar
 
+.tools/
+packages/
+
 bin
 obj

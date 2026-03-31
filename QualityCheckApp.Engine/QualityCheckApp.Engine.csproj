@@ -2,20 +2,22 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <Platform Condition="'$(Platform)' == ''">x86</Platform>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
     <ProjectGuid>{42F4A77E-C89C-4FE5-B13A-E0EAB5984531}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>QualityCheckApp.Engine</RootNamespace>
     <AssemblyName>QualityCheckApp.Engine</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <LangVersion>5</LangVersion>
     <UseWPF>true</UseWPF>
     <Prefer32Bit>true</Prefer32Bit>
     <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,24 +25,31 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFrameworkVersion)' == 'v4.8'">
+    <TargetFrameworkRootPath>..\packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\</TargetFrameworkRootPath>
+    <EnableFrameworkPathOverride>false</EnableFrameworkPathOverride>
+    <NoStdLib>true</NoStdLib>
+  </PropertyGroup>
+
   <ItemGroup>
+    <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -48,6 +57,87 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="MaxRev.Gdal.Core">
+      <HintPath>..\packages\MaxRev.Gdal.Core.3.12.2.472\lib\net461\MaxRev.Gdal.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="MaxRev.Gdal.WindowsRuntime.Minimal">
+      <HintPath>..\packages\MaxRev.Gdal.WindowsRuntime.Minimal.3.12.2.472\lib\net461\MaxRev.Gdal.WindowsRuntime.Minimal.dll</HintPath>
+    </Reference>
+    <Reference Include="Mapsui">
+      <HintPath>..\packages\Mapsui.3.0.2\lib\netstandard2.0\Mapsui.dll</HintPath>
+    </Reference>
+    <Reference Include="Mapsui.Geometries">
+      <HintPath>..\packages\Mapsui.3.0.2\lib\netstandard2.0\Mapsui.Geometries.dll</HintPath>
+    </Reference>
+    <Reference Include="Mapsui.Rendering.Skia">
+      <HintPath>..\packages\Mapsui.3.0.2\lib\netstandard2.0\Mapsui.Rendering.Skia.dll</HintPath>
+    </Reference>
+    <Reference Include="Mapsui.Rendering.Xaml">
+      <HintPath>..\packages\Mapsui.Wpf-Net472.3.0.2\lib\net472\Mapsui.Rendering.Xaml.dll</HintPath>
+    </Reference>
+    <Reference Include="Mapsui.UI.Wpf">
+      <HintPath>..\packages\Mapsui.Wpf-Net472.3.0.2\lib\net472\Mapsui.UI.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="BruTile">
+      <HintPath>..\packages\BruTile.4.0.0\lib\netstandard2.0\BruTile.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp">
+      <HintPath>..\packages\SkiaSharp.2.80.2\lib\net462\SkiaSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp.HarfBuzz">
+      <HintPath>..\packages\SkiaSharp.HarfBuzz.2.80.2\lib\net462\SkiaSharp.HarfBuzz.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp.Views.Desktop.Common">
+      <HintPath>..\packages\SkiaSharp.Views.Desktop.Common.2.80.2\lib\net462\SkiaSharp.Views.Desktop.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="SkiaSharp.Views.WPF">
+      <HintPath>..\packages\SkiaSharp.Views.WPF.2.80.2\lib\net462\SkiaSharp.Views.WPF.dll</HintPath>
+    </Reference>
+    <Reference Include="Topten.RichTextKit">
+      <HintPath>..\packages\Topten.RichTextKit.0.4.145\lib\net462\Topten.RichTextKit.dll</HintPath>
+    </Reference>
+    <Reference Include="Svg.Skia">
+      <HintPath>..\packages\Svg.Skia.0.5.7.1\lib\net461\Svg.Skia.dll</HintPath>
+    </Reference>
+    <Reference Include="Svg.Model">
+      <HintPath>..\packages\Svg.Model.0.5.7.1\lib\net461\Svg.Model.dll</HintPath>
+    </Reference>
+    <Reference Include="Svg.Custom">
+      <HintPath>..\packages\Svg.Custom.0.5.7.1\lib\net461\Svg.Custom.dll</HintPath>
+    </Reference>
+    <Reference Include="ShimSkiaSharp">
+      <HintPath>..\packages\ShimSkiaSharp.0.5.7.1\lib\net461\ShimSkiaSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="HarfBuzzSharp">
+      <HintPath>..\packages\HarfBuzzSharp.2.6.1.7\lib\net462\HarfBuzzSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <HintPath>..\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+    </Reference>
+    <Reference Include="netstandard">
+      <HintPath>..\packages\Microsoft.NETFramework.ReferenceAssemblies.net48.1.0.3\build\.NETFramework\v4.8\Facades\netstandard.dll</HintPath>
+    </Reference>
+    <Reference Include="NetTopologySuite">
+      <HintPath>..\packages\NetTopologySuite.2.5.0\lib\netstandard2.0\NetTopologySuite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="WindowsBase" />
@@ -67,26 +157,64 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\GdbLayerInfo.cs" />
+    <Compile Include="Models\MapPreviewLoadResult.cs" />
     <Compile Include="Models\OpenSourceModuleInfo.cs" />
     <Compile Include="Models\TopologyCheckResult.cs" />
     <Compile Include="Models\TopologyIssueInfo.cs" />
+    <Compile Include="Models\WktValidationResult.cs" />
     <Compile Include="Models\ZipExtractionResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\FileTopologyCheckService.cs" />
+    <Compile Include="Services\GdalOgrDatasetReader.cs" />
+    <Compile Include="Services\GdalMapsuiPreviewService.cs" />
+    <Compile Include="Services\GdalRuntimeBootstrapper.cs" />
     <Compile Include="Services\GdbDirectoryInspectorService.cs" />
     <Compile Include="Services\IGeometryDatasetReader.cs" />
     <Compile Include="Services\IGeometryValidationAdapter.cs" />
     <Compile Include="Services\IMapViewportAdapter.cs" />
     <Compile Include="Services\ITopologyCheckService.cs" />
+    <Compile Include="Services\MapsuiPreviewViewportAdapter.cs" />
+    <Compile Include="Services\NtsWktValidationService.cs" />
     <Compile Include="Services\OpenSourceModuleCatalogService.cs" />
-    <Compile Include="Services\PlaceholderGdalDatasetReader.cs" />
-    <Compile Include="Services\PlaceholderMapsuiViewportAdapter.cs" />
     <Compile Include="Services\PlaceholderNetTopologySuiteValidationAdapter.cs" />
     <Compile Include="Services\ZipPackageService.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="App.config" />
+    <None Include="..\packages\Mapsui.3.0.2\lib\netstandard2.0\Mapsui.Rendering.Skia.dll">
+      <Link>Mapsui.Rendering.Skia.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\Svg.Skia.0.5.7.1\lib\net461\Svg.Skia.dll">
+      <Link>Svg.Skia.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\Svg.Model.0.5.7.1\lib\net461\Svg.Model.dll">
+      <Link>Svg.Model.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll">
+      <Link>System.ValueTuple.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\Mapsui.Wpf-Net472.3.0.2\lib\net472\Mapsui.UI.Wpf.dll">
+      <Link>Mapsui.UI.Wpf.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\SkiaSharp.2.80.2\runtimes\win-x64\native\libSkiaSharp.dll">
+      <Link>x64\libSkiaSharp.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\HarfBuzzSharp.2.6.1.7\runtimes\win-x64\native\libHarfBuzzSharp.dll">
+      <Link>libHarfBuzzSharp.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\packages\HarfBuzzSharp.2.6.1.7\runtimes\win-x64\native\libHarfBuzzSharp.dll">
+      <Link>x64\libHarfBuzzSharp.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -106,6 +234,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="packages.config" />
   </ItemGroup>
 
   <ItemGroup>
@@ -137,5 +266,7 @@
     </BootstrapperPackage>
   </ItemGroup>
 
+  <Import Project="..\packages\MaxRev.Gdal.Core.3.12.2.472\build\net461\MaxRev.Gdal.Core.targets" Condition="Exists('..\packages\MaxRev.Gdal.Core.3.12.2.472\build\net461\MaxRev.Gdal.Core.targets')" />
+  <Import Project="..\packages\MaxRev.Gdal.WindowsRuntime.Minimal.3.12.2.472\build\net461\MaxRev.Gdal.WindowsRuntime.Minimal.targets" Condition="Exists('..\packages\MaxRev.Gdal.WindowsRuntime.Minimal.3.12.2.472\build\net461\MaxRev.Gdal.WindowsRuntime.Minimal.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

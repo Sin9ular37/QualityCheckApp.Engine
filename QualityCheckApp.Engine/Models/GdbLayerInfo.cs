@@ -13,6 +13,11 @@ namespace QualityCheckApp.Engine.Models
         private string _layerName;
         private string _geometryType;
         private string _summary;
+        private bool _hasExtent;
+        private double _extentXMin;
+        private double _extentYMin;
+        private double _extentXMax;
+        private double _extentYMax;
         private bool _displayable;
         private bool _isVisible;
 
@@ -23,6 +28,11 @@ namespace QualityCheckApp.Engine.Models
             _layerName = string.Empty;
             _geometryType = "未知";
             _summary = string.Empty;
+            _hasExtent = false;
+            _extentXMin = 0;
+            _extentYMin = 0;
+            _extentXMax = 0;
+            _extentYMax = 0;
             _displayable = false;
             _isVisible = false;
         }
@@ -99,6 +109,81 @@ namespace QualityCheckApp.Engine.Models
 
                 _summary = value ?? string.Empty;
                 OnPropertyChanged("Summary");
+            }
+        }
+
+        public bool HasExtent
+        {
+            get { return _hasExtent; }
+            set
+            {
+                if (_hasExtent == value)
+                {
+                    return;
+                }
+
+                _hasExtent = value;
+                OnPropertyChanged("HasExtent");
+            }
+        }
+
+        public double ExtentXMin
+        {
+            get { return _extentXMin; }
+            set
+            {
+                if (_extentXMin == value)
+                {
+                    return;
+                }
+
+                _extentXMin = value;
+                OnPropertyChanged("ExtentXMin");
+            }
+        }
+
+        public double ExtentYMin
+        {
+            get { return _extentYMin; }
+            set
+            {
+                if (_extentYMin == value)
+                {
+                    return;
+                }
+
+                _extentYMin = value;
+                OnPropertyChanged("ExtentYMin");
+            }
+        }
+
+        public double ExtentXMax
+        {
+            get { return _extentXMax; }
+            set
+            {
+                if (_extentXMax == value)
+                {
+                    return;
+                }
+
+                _extentXMax = value;
+                OnPropertyChanged("ExtentXMax");
+            }
+        }
+
+        public double ExtentYMax
+        {
+            get { return _extentYMax; }
+            set
+            {
+                if (_extentYMax == value)
+                {
+                    return;
+                }
+
+                _extentYMax = value;
+                OnPropertyChanged("ExtentYMax");
             }
         }
 
