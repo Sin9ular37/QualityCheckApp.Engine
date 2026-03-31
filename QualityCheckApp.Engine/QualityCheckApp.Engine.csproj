@@ -67,6 +67,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Models\GdbLayerInfo.cs" />
+    <Compile Include="Models\OpenSourceModuleInfo.cs" />
     <Compile Include="Models\TopologyCheckResult.cs" />
     <Compile Include="Models\TopologyIssueInfo.cs" />
     <Compile Include="Models\ZipExtractionResult.cs" />
@@ -74,7 +75,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\FileTopologyCheckService.cs" />
     <Compile Include="Services\GdbDirectoryInspectorService.cs" />
+    <Compile Include="Services\IGeometryDatasetReader.cs" />
+    <Compile Include="Services\IGeometryValidationAdapter.cs" />
+    <Compile Include="Services\IMapViewportAdapter.cs" />
     <Compile Include="Services\ITopologyCheckService.cs" />
+    <Compile Include="Services\OpenSourceModuleCatalogService.cs" />
+    <Compile Include="Services\PlaceholderGdalDatasetReader.cs" />
+    <Compile Include="Services\PlaceholderMapsuiViewportAdapter.cs" />
+    <Compile Include="Services\PlaceholderNetTopologySuiteValidationAdapter.cs" />
     <Compile Include="Services\ZipPackageService.cs" />
   </ItemGroup>
 

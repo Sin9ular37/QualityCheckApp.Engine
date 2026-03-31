@@ -21,7 +21,9 @@ namespace QualityCheckApp.Engine
         private readonly ZipPackageService _zipService = new ZipPackageService();
         private readonly GdbDirectoryInspectorService _gdbInspectorService = new GdbDirectoryInspectorService();
         private readonly ITopologyCheckService _topologyCheckService = new FileTopologyCheckService();
+        private readonly OpenSourceModuleCatalogService _openSourceModuleCatalogService = new OpenSourceModuleCatalogService();
         private readonly ObservableCollection<GdbLayerInfo> _layers;
+        private readonly ObservableCollection<OpenSourceModuleInfo> _openSourceModules;
         private readonly ObservableCollection<TopologyIssueInfo> _topologyIssues;
 
         private ZipExtractionResult _currentExtraction;
@@ -43,7 +45,13 @@ namespace QualityCheckApp.Engine
             _layers = new ObservableCollection<GdbLayerInfo>();
             _layers.CollectionChanged += OnLayersCollectionChanged;
 
+            _openSourceModules = new ObservableCollection<OpenSourceModuleInfo>();
             _topologyIssues = new ObservableCollection<TopologyIssueInfo>();
+
+            foreach (var module in _openSourceModuleCatalogService.BuildModules())
+            {
+                _openSourceModules.Add(module);
+            }
 
             DataContext = this;
         }
@@ -56,6 +64,11 @@ namespace QualityCheckApp.Engine
         public ObservableCollection<TopologyIssueInfo> TopologyIssues
         {
             get { return _topologyIssues; }
+        }
+
+        public ObservableCollection<OpenSourceModuleInfo> OpenSourceModules
+        {
+            get { return _openSourceModules; }
         }
 
         public string SelectedZipPath
@@ -234,6 +247,38 @@ namespace QualityCheckApp.Engine
         public int TopologyIssueCount
         {
             get { return TopologyIssues.Count; }
+        }
+
+        public int ScaffoldedOpenSourceModuleCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var module in OpenSourceModules)
+                {
+                    if (module.IsScaffolded)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public int PlannedOpenSourceModuleCount
+        {
+            get { return OpenSourceModules.Count; }
+        }
+
+        public string OpenSourceSkeletonSummary
+        {
+            get
+            {
+                return string.Format("已建立 {0}/{1} 个开源替代模块骨架：GDAL/OGR 读取、NetTopologySuite 校验、Mapsui 视口已留好接口，ProjNet 作为后续补充。",
+                    ScaffoldedOpenSourceModuleCount,
+                    PlannedOpenSourceModuleCount);
+            }
         }
 
         public bool IsBusy

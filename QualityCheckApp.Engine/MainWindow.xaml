@@ -176,6 +176,9 @@
                     <TextBlock Text="3. 核心元数据与表文件检查"
                                Margin="0,6,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
+                    <TextBlock Text="4. 开源 GIS 替代骨架"
+                               Margin="0,6,0,0"
+                               Foreground="{StaticResource PrimaryTextBrush}" />
                 </StackPanel>
 
                 <Grid Grid.Column="2">
@@ -368,7 +371,7 @@
                                     <TextBlock Text="2. 当前仅对 ZIP 与 .gdb 目录结构做无依赖检查，不再提供地图浏览与官方几何校验。"
                                                Margin="0,6,0,0"
                                                Style="{StaticResource MutedTextStyle}" />
-                                    <TextBlock Text="3. 后续如果需要恢复几何级能力，应引入新的数据引擎，而不是重新绑定 ArcGIS 组件。"
+                                    <TextBlock Text="3. 已补开源 GIS 替代骨架，后续优先对接 GDAL/OGR、NetTopologySuite、Mapsui。"
                                                Margin="0,6,0,0"
                                                Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
@@ -455,6 +458,9 @@
                                    Margin="0,12,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                         <TextBlock Text="{Binding TopologySummary}"
+                                   Margin="0,12,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{Binding OpenSourceSkeletonSummary}"
                                    Margin="0,12,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
@@ -580,6 +586,52 @@
                                         <DataGridTextColumn Header="编号" Binding="{Binding FeatureId}" Width="64" />
                                         <DataGridTextColumn Header="规则" Binding="{Binding RuleName}" Width="120" />
                                         <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="开源骨架"
+                                 Style="{StaticResource WorkbenchTabItemStyle}">
+                            <Grid Margin="0,14,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0">
+                                    <TextBlock Text="开源 GIS 替代骨架" Style="{StaticResource PanelTitleStyle}" />
+                                    <TextBlock Text="这一页展示 feature/outarcgis 分支当前已经建立好的替代层接口，便于后续逐步接入真实开源组件。"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+
+                                <Border Grid.Row="1"
+                                        Margin="0,16,0,12"
+                                        Padding="12"
+                                        CornerRadius="14"
+                                        Background="{StaticResource SubtleSurfaceBrush}">
+                                    <TextBlock Text="{Binding OpenSourceSkeletonSummary}"
+                                               Foreground="{StaticResource PrimaryTextBrush}"
+                                               TextWrapping="Wrap" />
+                                </Border>
+
+                                <DataGrid Grid.Row="2"
+                                          ItemsSource="{Binding OpenSourceModules}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          RowHeaderWidth="0"
+                                          GridLinesVisibility="Horizontal">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="模块" Binding="{Binding ModuleName}" Width="118" />
+                                        <DataGridTextColumn Header="计划组件" Binding="{Binding PlannedLibrary}" Width="110" />
+                                        <DataGridTextColumn Header="职责" Binding="{Binding Responsibility}" Width="1.2*" />
+                                        <DataGridTextColumn Header="状态" Binding="{Binding Status}" Width="108" />
+                                        <DataGridTextColumn Header="下一步" Binding="{Binding NextStep}" Width="1.25*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
