@@ -12,6 +12,7 @@ namespace QualityCheckApp.Engine.Models
         private string _datasetName;
         private string _layerName;
         private string _geometryType;
+        private string _summary;
         private bool _displayable;
         private bool _isVisible;
 
@@ -21,6 +22,7 @@ namespace QualityCheckApp.Engine.Models
             _datasetName = string.Empty;
             _layerName = string.Empty;
             _geometryType = "未知";
+            _summary = string.Empty;
             _displayable = false;
             _isVisible = false;
         }
@@ -82,6 +84,21 @@ namespace QualityCheckApp.Engine.Models
 
                 _geometryType = value ?? "未知";
                 OnPropertyChanged("GeometryType");
+            }
+        }
+
+        public string Summary
+        {
+            get { return _summary; }
+            set
+            {
+                if (_summary == value)
+                {
+                    return;
+                }
+
+                _summary = value ?? string.Empty;
+                OnPropertyChanged("Summary");
             }
         }
 

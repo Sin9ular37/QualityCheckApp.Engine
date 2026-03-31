@@ -3,9 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
-        Title="质检地图工作台"
+        Title="质量检查工作台（OutArcGIS）"
         Height="820"
         Width="1440"
         MinHeight="720"
@@ -126,16 +125,16 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.8*" />
-                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="1.1*" />
                     <ColumnDefinition Width="1.4*" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="质检地图工作台"
+                    <TextBlock Text="质量检查工作台（OutArcGIS）"
                                FontSize="28"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="统一入口处理普通 .gdb ZIP 与标准测试包，在同一窗口完成结构检查、图层识别、拓扑检测和地图浏览。"
+                    <TextBlock Text="当前分支已剥离 ArcGIS Engine、ArcObjects、AxMapControl 与官方几何检查工具，保留 ZIP 结构校验和 File Geodatabase 目录级检查能力。"
                                Margin="0,10,0,0"
                                FontSize="14"
                                Foreground="{StaticResource PrimaryTextBrush}"
@@ -146,35 +145,35 @@
                                 Padding="10,6"
                                 CornerRadius="14"
                                 Background="#FFEAF5FF">
-                            <TextBlock Text="单入口工作流" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="纯 WPF 入口" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
                         </Border>
                         <Border Margin="0,0,8,8"
                                 Padding="10,6"
                                 CornerRadius="14"
                                 Background="#FFEEF8E9">
-                            <TextBlock Text="支持标准测试包" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="无 ArcGIS 运行时" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
                         </Border>
                         <Border Margin="0,0,8,8"
                                 Padding="10,6"
                                 CornerRadius="14"
                                 Background="#FFEFEFFF">
-                            <TextBlock Text="内置地图浏览" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
+                            <TextBlock Text="目录级 GDB 检查" Foreground="{StaticResource PrimaryTextBrush}" FontWeight="SemiBold" />
                         </Border>
                     </WrapPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="18,0,18,0">
-                    <TextBlock Text="推荐流程"
+                    <TextBlock Text="当前保留能力"
                                FontSize="18"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="1. 选择 ZIP 压缩包"
+                    <TextBlock Text="1. ZIP 解压与结构校验"
                                Margin="0,12,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="2. 执行结构检查与图层识别"
+                    <TextBlock Text="2. .gdb 容器识别与摘要"
                                Margin="0,6,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
-                    <TextBlock Text="3. 在地图中浏览并定位图层"
+                    <TextBlock Text="3. 核心元数据与表文件检查"
                                Margin="0,6,0,0"
                                Foreground="{StaticResource PrimaryTextBrush}" />
                 </StackPanel>
@@ -211,10 +210,10 @@
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="识别图层"
+                            <TextBlock Text="结构可用"
                                        Foreground="{StaticResource PrimaryTextBrush}"
                                        FontSize="13" />
-                            <TextBlock Text="{Binding LayerCount}"
+                            <TextBlock Text="{Binding HealthyLayerCount}"
                                        Margin="0,10,0,0"
                                        Style="{StaticResource MetricValueStyle}" />
                         </StackPanel>
@@ -228,10 +227,10 @@
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="当前可见"
+                            <TextBlock Text="待关注"
                                        Foreground="{StaticResource PrimaryTextBrush}"
                                        FontSize="13" />
-                            <TextBlock Text="{Binding VisibleLayerCount}"
+                            <TextBlock Text="{Binding NeedsAttentionLayerCount}"
                                        Margin="0,10,0,0"
                                        Style="{StaticResource MetricValueStyle}" />
                         </StackPanel>
@@ -242,122 +241,147 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.85*" />
-                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="1.65*" />
+                <ColumnDefinition Width="1.15*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
                     Margin="0,0,16,0"
-                    Padding="0"
                     Style="{StaticResource CardBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="18,16,18,12">
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="无 ArcGIS 依赖模式" Style="{StaticResource PanelTitleStyle}" />
+                        <TextBlock Text="这个分支不再尝试加载地图或解析 ArcGIS COM 对象，而是聚焦于 ZIP 结构和 File Geodatabase 目录完整性。"
+                                   Margin="0,8,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Margin="0,18,0,18">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel>
-                            <TextBlock Text="GIS 地图视图" Style="{StaticResource PanelTitleStyle}" />
-                            <TextBlock Text="{Binding PackageMode, StringFormat=当前模式：{0}}"
-                                       Margin="0,6,0,0"
-                                       Style="{StaticResource MutedTextStyle}" />
-                        </StackPanel>
+                        <Border Grid.Column="0"
+                                Margin="0,0,8,0"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="{StaticResource SubtleSurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="当前模式" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
+                                <TextBlock Text="{Binding PackageMode}"
+                                           Margin="0,8,0,0"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
 
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="放大"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Width="72"
-                                    Click="OnZoomInClick"
-                                    IsEnabled="{Binding IsMapReady}" />
-                            <Button Content="缩小"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Width="72"
-                                    Click="OnZoomOutClick"
-                                    IsEnabled="{Binding IsMapReady}" />
-                            <Button Content="全图"
-                                    Style="{StaticResource SecondaryButtonStyle}"
-                                    Width="78"
-                                    Margin="0"
-                                    Click="OnZoomFullExtentClick"
-                                    IsEnabled="{Binding IsMapReady}" />
-                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Margin="4,0"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="{StaticResource SubtleSurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="选中容器" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
+                                <TextBlock Text="{Binding SelectedLayerDisplayName}"
+                                           Margin="0,8,0,0"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Margin="8,0,0,0"
+                                Padding="14"
+                                CornerRadius="16"
+                                Background="{StaticResource SubtleSurfaceBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="目录问题" FontSize="12" Foreground="{StaticResource PrimaryTextBrush}" />
+                                <TextBlock Text="{Binding TopologyIssueCount}"
+                                           Margin="0,8,0,0"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
                     </Grid>
 
-                    <Border Grid.Row="1"
-                            Margin="18,0,18,18"
+                    <Border Grid.Row="2"
+                            Padding="18"
                             CornerRadius="18"
                             Background="#FFF9FBFE"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1">
                         <Grid>
-                            <wfi:WindowsFormsHost x:Name="MapHost" />
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                            <Border HorizontalAlignment="Left"
-                                    VerticalAlignment="Top"
-                                    Margin="16"
-                                    Padding="10,6"
-                                    CornerRadius="14"
-                                    Background="#EEF6FAFF"
-                                    BorderBrush="{StaticResource BorderBrush}"
-                                    BorderThickness="1">
-                                <TextBlock Text="{Binding PackageMode}"
-                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                           FontWeight="SemiBold" />
-                            </Border>
+                            <TextBlock Text="工作区摘要"
+                                       Style="{StaticResource PanelTitleStyle}" />
 
-                            <TextBlock Text="AxMapControl 加载中..."
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource PrimaryTextBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       IsHitTestVisible="False">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMapReady}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
+                            <TextBlock Grid.Row="1"
+                                       Margin="0,12,0,0"
+                                       Text="{Binding StructureSummary}"
+                                       Style="{StaticResource MutedTextStyle}" />
 
-                            <Border HorizontalAlignment="Right"
-                                    VerticalAlignment="Bottom"
-                                    Margin="16"
-                                    Padding="10"
-                                    CornerRadius="12"
-                                    Background="#EEF8FBFF"
-                                    BorderBrush="{StaticResource BorderBrush}"
+                            <TextBlock Grid.Row="2"
+                                       Margin="0,12,0,0"
+                                       Text="{Binding SelectedLayerSummary}"
+                                       Style="{StaticResource MutedTextStyle}" />
+
+                            <Border Grid.Row="3"
+                                    Margin="0,18,0,0"
+                                    Padding="14"
+                                    CornerRadius="16"
+                                    Background="{StaticResource AccentSurfaceBrush}"
+                                    BorderBrush="{StaticResource BorderStrongBrush}"
                                     BorderThickness="1">
                                 <StackPanel>
-                                    <TextBlock Text="{Binding MouseCoordinate}"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontSize="12"
-                                               Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding ScaleInfo}"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontSize="12" />
+                                    <TextBlock Text="分支说明"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource PrimaryTextBrush}" />
+                                    <TextBlock Text="1. 已去掉 ArcGIS Engine Runtime、AxMapControl、ArcObjects 数据读取与许可初始化。"
+                                               Margin="0,10,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="2. 当前仅对 ZIP 与 .gdb 目录结构做无依赖检查，不再提供地图浏览与官方几何校验。"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="3. 后续如果需要恢复几何级能力，应引入新的数据引擎，而不是重新绑定 ArcGIS 组件。"
+                                               Margin="0,6,0,0"
+                                               Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
                     </Border>
 
-                    <Border Grid.Row="2"
-                            Margin="18,0,18,18"
+                    <Border Grid.Row="3"
+                            Margin="0,18,0,0"
                             Padding="14,10"
                             CornerRadius="14"
                             Background="#FFF3F7FB">
-                        <TextBlock Text="地图交互：左键拖动平移，滚轮缩放；双击右侧图层或点击“定位选中”可快速聚焦。"
+                        <TextBlock Text="该工作台适合在无 ArcGIS 环境下做压缩包入库前检查，帮助先识别 ZIP 结构和 GDB 目录是否完整。"
                                    Foreground="{StaticResource PrimaryTextBrush}"
                                    FontSize="13"
                                    TextWrapping="Wrap" />
@@ -426,51 +450,13 @@
                         Margin="0,0,0,12"
                         Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="结构与识别结果" Style="{StaticResource PanelTitleStyle}" />
-
-                        <Grid Margin="0,12,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0"
-                                    Margin="0,0,8,0"
-                                    Padding="12"
-                                    CornerRadius="14"
-                                    Background="{StaticResource SubtleSurfaceBrush}">
-                                <StackPanel>
-                                    <TextBlock Text="识别模式"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding PackageMode}"
-                                               Margin="0,6,0,0"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="1"
-                                    Margin="8,0,0,0"
-                                    Padding="12"
-                                    CornerRadius="14"
-                                    Background="{StaticResource SubtleSurfaceBrush}">
-                                <StackPanel>
-                                    <TextBlock Text="可显示图层"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding DisplayableLayerCount}"
-                                               Margin="0,6,0,0"
-                                               Foreground="{StaticResource PrimaryTextBrush}"
-                                               FontWeight="SemiBold" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
+                        <TextBlock Text="结构结果" Style="{StaticResource PanelTitleStyle}" />
                         <TextBlock Text="{Binding StructureSummary}"
                                    Margin="0,12,0,0"
-                                   Foreground="{StaticResource PrimaryTextBrush}"
-                                   TextWrapping="Wrap" />
+                                   Style="{StaticResource MutedTextStyle}" />
+                        <TextBlock Text="{Binding TopologySummary}"
+                                   Margin="0,12,0,0"
+                                   Style="{StaticResource MutedTextStyle}" />
                     </StackPanel>
                 </Border>
 
@@ -480,13 +466,12 @@
                                 Foreground="{StaticResource PrimaryTextBrush}"
                                 BorderThickness="0"
                                 Padding="0">
-                        <TabItem Header="图层清单"
+                        <TabItem Header="GDB 容器"
                                  Style="{StaticResource WorkbenchTabItemStyle}">
                             <Grid Margin="0,14,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0">
@@ -496,65 +481,51 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel>
-                                        <TextBlock Text="图层清单" Style="{StaticResource PanelTitleStyle}" />
-                                        <TextBlock Text="双击图层可快速定位，勾选“地图可见”可控制地图显示。"
+                                        <TextBlock Text="GDB 容器清单" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="每个条目代表一个 .gdb 目录，当前只做目录层面的元数据与表文件检查。"
                                                    Margin="0,6,0,0"
                                                    Style="{StaticResource MutedTextStyle}" />
                                     </StackPanel>
 
                                     <Button Grid.Column="1"
-                                            Content="定位选中"
-                                            Width="104"
+                                            Content="检查选中容器"
+                                            Width="118"
                                             Style="{StaticResource SecondaryButtonStyle}"
                                             Margin="0"
-                                            Click="OnLocateSelectedLayerClick"
-                                            IsEnabled="{Binding CanLocateSelectedLayer}" />
+                                            Click="OnRunTopologyCheckClick"
+                                            IsEnabled="{Binding CanRunTopologyCheck}" />
                                 </Grid>
 
                                 <DataGrid Grid.Row="1"
-                                          x:Name="LayersGrid"
-                                          Margin="0,16,0,12"
+                                          Margin="0,16,0,0"
                                           ItemsSource="{Binding Layers}"
                                           SelectedItem="{Binding SelectedLayer}"
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"
                                           CanUserDeleteRows="False"
-                                          IsReadOnly="False"
+                                          IsReadOnly="True"
                                           HeadersVisibility="Column"
                                           RowHeaderWidth="0"
-                                          GridLinesVisibility="Horizontal"
-                                          Background="{StaticResource PageSurfaceBrush}"
-                                          Foreground="{StaticResource PrimaryTextBrush}"
-                                          BorderBrush="{StaticResource BorderBrush}"
-                                          AlternatingRowBackground="{StaticResource SubtleSurfaceBrush}"
-                                          MouseDoubleClick="OnLayersGridDoubleClick">
+                                          GridLinesVisibility="Horizontal">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="图层名" Binding="{Binding LayerName}" Width="1.8*" />
-                                        <DataGridTextColumn Header="几何类型" Binding="{Binding GeometryType}" Width="*" />
-                                        <DataGridCheckBoxColumn Header="可显示" Binding="{Binding Displayable}" IsReadOnly="True" Width="74" />
-                                        <DataGridCheckBoxColumn Header="地图可见"
-                                                                Binding="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
-                                                                Width="82" />
-                                        <DataGridTextColumn Header=".gdb 路径" Binding="{Binding GdbPath}" Width="2.4*" />
+                                        <DataGridTextColumn Header="名称" Binding="{Binding LayerName}" Width="1.2*" />
+                                        <DataGridTextColumn Header="类型" Binding="{Binding DatasetName}" Width="1.1*" />
+                                        <DataGridTextColumn Header="内容概览" Binding="{Binding GeometryType}" Width="1.2*" />
+                                        <DataGridCheckBoxColumn Header="结构可用" Binding="{Binding Displayable}" Width="78" />
+                                        <DataGridTextColumn Header="摘要" Binding="{Binding Summary}" Width="1.7*" />
+                                        <DataGridTextColumn Header="路径" Binding="{Binding GdbPath}" Width="2.2*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
-
-                                <TextBlock Grid.Row="2"
-                                           Text="旧模块能力已合并到当前主入口，后续操作均在本窗口完成。"
-                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                           FontSize="12"
-                                           TextWrapping="Wrap" />
                             </Grid>
                         </TabItem>
 
-                        <TabItem Header="拓扑问题"
+                        <TabItem Header="目录检查"
                                  Style="{StaticResource WorkbenchTabItemStyle}">
                             <Grid Margin="0,14,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0">
@@ -564,23 +535,18 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel>
-                                        <TextBlock Text="拓扑检测" Style="{StaticResource PanelTitleStyle}" />
-                                        <TextBlock Text="{Binding SelectedLayerDisplayName, StringFormat=当前图层：{0}}"
+                                        <TextBlock Text="目录检查结果" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="输出的是无 ArcGIS 依赖的目录问题，而不是几何自相交或拓扑规则结果。"
                                                    Margin="0,6,0,0"
                                                    Style="{StaticResource MutedTextStyle}" />
                                     </StackPanel>
 
                                     <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
-                                        <Button Content="检测选中图层"
-                                                Width="118"
+                                        <Button Content="重新检查"
+                                                Width="96"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Click="OnRunTopologyCheckClick"
                                                 IsEnabled="{Binding CanRunTopologyCheck}" />
-                                        <Button Content="定位选中问题"
-                                                Width="118"
-                                                Style="{StaticResource SecondaryButtonStyle}"
-                                                Click="OnLocateSelectedTopologyIssueClick"
-                                                IsEnabled="{Binding CanLocateSelectedTopologyIssue}" />
                                         <Button Content="清空问题"
                                                 Width="96"
                                                 Style="{StaticResource SecondaryButtonStyle}"
@@ -595,43 +561,12 @@
                                         Padding="12"
                                         CornerRadius="14"
                                         Background="{StaticResource SubtleSurfaceBrush}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Border Width="74"
-                                                Height="74"
-                                                Margin="0,0,14,0"
-                                                CornerRadius="16"
-                                                Background="{StaticResource AccentStrongSurfaceBrush}"
-                                                BorderBrush="{StaticResource BorderStrongBrush}"
-                                                BorderThickness="1">
-                                            <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="问题数"
-                                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                                           FontSize="12"
-                                                           HorizontalAlignment="Center" />
-                                                <TextBlock Text="{Binding TopologyIssueCount}"
-                                                           Margin="0,8,0,0"
-                                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                                           FontSize="24"
-                                                           FontWeight="SemiBold"
-                                                           HorizontalAlignment="Center" />
-                                            </StackPanel>
-                                        </Border>
-
-                                        <TextBlock Grid.Column="1"
-                                                   VerticalAlignment="Center"
-                                                   Text="{Binding TopologySummary}"
-                                                   Foreground="{StaticResource PrimaryTextBrush}"
-                                                   TextWrapping="Wrap" />
-                                    </Grid>
+                                    <TextBlock Text="{Binding TopologySummary}"
+                                               Foreground="{StaticResource PrimaryTextBrush}"
+                                               TextWrapping="Wrap" />
                                 </Border>
 
                                 <DataGrid Grid.Row="2"
-                                          x:Name="TopologyIssuesGrid"
                                           ItemsSource="{Binding TopologyIssues}"
                                           SelectedItem="{Binding SelectedTopologyIssue}"
                                           AutoGenerateColumns="False"
@@ -640,26 +575,13 @@
                                           IsReadOnly="True"
                                           HeadersVisibility="Column"
                                           RowHeaderWidth="0"
-                                          GridLinesVisibility="Horizontal"
-                                          Background="{StaticResource PageSurfaceBrush}"
-                                          Foreground="{StaticResource PrimaryTextBrush}"
-                                          BorderBrush="{StaticResource BorderBrush}"
-                                          AlternatingRowBackground="{StaticResource SubtleSurfaceBrush}"
-                                          MouseDoubleClick="OnTopologyIssuesGridDoubleClick">
+                                          GridLinesVisibility="Horizontal">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="规则" Binding="{Binding RuleName}" Width="108" />
-                                        <DataGridTextColumn Header="要素OID" Binding="{Binding FeatureId}" Width="74" />
-                                        <DataGridTextColumn Header="相关OID" Binding="{Binding RelatedFeatureId}" Width="74" />
+                                        <DataGridTextColumn Header="编号" Binding="{Binding FeatureId}" Width="64" />
+                                        <DataGridTextColumn Header="规则" Binding="{Binding RuleName}" Width="120" />
                                         <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="*" />
                                     </DataGrid.Columns>
                                 </DataGrid>
-
-                                <TextBlock Grid.Row="3"
-                                           Margin="0,12,0,0"
-                                           Text="当前内置规则：全部图层检查空几何；线图层和面图层检查非简单几何；点图层检查重复点；面图层检查面重叠。双击问题可缩放到问题范围。"
-                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                           FontSize="12"
-                                           TextWrapping="Wrap" />
                             </Grid>
                         </TabItem>
                     </TabControl>
