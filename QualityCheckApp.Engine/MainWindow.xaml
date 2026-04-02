@@ -574,7 +574,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel>
-                                        <TextBlock Text="拓扑检测" Style="{StaticResource PanelTitleStyle}" />
+                                        <TextBlock Text="几何检查" Style="{StaticResource PanelTitleStyle}" />
                                         <TextBlock Text="{Binding SelectedLayerDisplayName, StringFormat=当前图层：{0}}"
                                                    Margin="0,6,0,0"
                                                    Style="{StaticResource MutedTextStyle}" />
@@ -684,10 +684,10 @@
 
                                 <TextBlock Grid.Row="3"
                                            Margin="0,12,0,0"
-                                           Text="当前内置规则：全部图层检查空几何；线图层和面图层检查非简单几何；点图层检查重复点；面图层检查面重叠。双击问题可缩放到问题范围。"
-                                           Foreground="{StaticResource PrimaryTextBrush}"
-                                           FontSize="12"
-                                           TextWrapping="Wrap" />
+                                            Text="当前使用 ArcGIS Check Geometry 官方工具做几何质量检查。双击问题可缩放到问题范围，并可导出检查报告。"
+                                            Foreground="{StaticResource PrimaryTextBrush}"
+                                            FontSize="12"
+                                            TextWrapping="Wrap" />
                             </Grid>
                         </TabItem>
                     </TabControl>

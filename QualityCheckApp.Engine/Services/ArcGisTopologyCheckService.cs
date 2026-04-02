@@ -1,12 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using ESRI.ArcGIS.DataManagementTools;
+using ESRI.ArcGIS.DataSourcesFile;
 using ESRI.ArcGIS.DataSourcesGDB;
+using ESRI.ArcGIS.esriSystem;
 using ESRI.ArcGIS.Geodatabase;
 using ESRI.ArcGIS.Geometry;
+using ESRI.ArcGIS.Geoprocessing;
+using ESRI.ArcGIS.Geoprocessor;
 
 using QualityCheckApp.Engine.Infrastructure;
 using QualityCheckApp.Engine.Models;
@@ -29,236 +35,180 @@ namespace QualityCheckApp.Engine.Services
 
             if (string.IsNullOrWhiteSpace(layerInfo.GdbPath) || string.IsNullOrWhiteSpace(layerInfo.DatasetName))
             {
-                throw new ArgumentException("缺少 .gdb 路径或数据集信息，无法执行拓扑检测。", "layerInfo");
+                throw new ArgumentException("缺少 .gdb 路径或数据集信息，无法执行几何检查。", "layerInfo");
             }
 
-            IWorkspaceFactory factory = new FileGDBWorkspaceFactoryClass();
+            IWorkspaceFactory gdbFactory = null;
             IWorkspace workspace = null;
             IFeatureWorkspace featureWorkspace = null;
             IFeatureClass featureClass = null;
 
+            var tempDirectory = string.Empty;
+
             try
             {
                 progress.Report("正在打开地理数据库...");
-                workspace = factory.OpenFromFile(layerInfo.GdbPath, 0);
+                gdbFactory = new FileGDBWorkspaceFactoryClass();
+                workspace = gdbFactory.OpenFromFile(layerInfo.GdbPath, 0);
                 featureWorkspace = (IFeatureWorkspace)workspace;
+
                 progress.Report("正在打开目标图层...");
                 featureClass = featureWorkspace.OpenFeatureClass(layerInfo.DatasetName);
 
                 var result = new TopologyCheckResult();
                 result.LayerName = string.IsNullOrWhiteSpace(layerInfo.LayerName) ? layerInfo.DatasetName : layerInfo.LayerName;
                 result.FeatureCount = featureClass.FeatureCount(null);
-                result.RuleSummary = BuildRuleSummary(featureClass.ShapeType);
-                progress.Report(string.Format("已获取图层，共 {0} 个要素，开始逐要素检查...", result.FeatureCount));
+                result.RuleSummary = "ArcGIS Check Geometry 官方几何质量检查";
 
-                var issues = new List<TopologyIssueInfo>();
-                if (result.FeatureCount > 0)
+                if (result.FeatureCount == 0)
                 {
-                    InspectFeatures(featureClass, layerInfo, issues, result.FeatureCount, token, progress);
+                    result.Summary = string.Format("图层 {0} 没有可检测要素。", result.LayerName);
+                    result.Issues = new List<TopologyIssueInfo>();
+                    return result;
                 }
 
+                tempDirectory = CreateTempDirectory();
+                var outputTablePath = System.IO.Path.Combine(tempDirectory, "check_geometry_result.dbf");
+
+                progress.Report("正在执行 ArcGIS Check Geometry...");
+                ExecuteCheckGeometry(BuildInputFeatureClassPath(layerInfo), outputTablePath);
+
+                progress.Report("正在读取官方几何检查结果...");
+                var issues = ReadIssues(outputTablePath, featureClass, layerInfo, token, progress);
                 result.Issues = issues;
-                result.Summary = BuildSummary(result.LayerName, result.FeatureCount, result.RuleSummary, result.IssueCount);
-                progress.Report(string.Format("拓扑检查完成：共发现 {0} 个问题。", result.IssueCount));
+                result.Summary = BuildSummary(result.LayerName, result.FeatureCount, result.IssueCount);
+                progress.Report(string.Format("几何检查完成：共发现 {0} 个问题。", result.IssueCount));
                 return result;
             }
             finally
             {
+                SafeDeleteDirectory(tempDirectory);
                 ReleaseComObject(featureClass);
                 ReleaseComObject(featureWorkspace);
                 ReleaseComObject(workspace);
-                ReleaseComObject(factory);
+                ReleaseComObject(gdbFactory);
             }
         }
 
-        private static void InspectFeatures(IFeatureClass featureClass, GdbLayerInfo layerInfo, IList<TopologyIssueInfo> issues, int featureCount, CancellationToken token, IProgress<string> progress)
+        private static void ExecuteCheckGeometry(string inputFeatureClassPath, string outputTablePath)
         {
-            IFeatureCursor cursor = null;
-            IFeature feature = null;
-            var processedCount = 0;
-            var reportStep = Math.Max(featureCount / 20, 1);
+            Geoprocessor geoprocessor = null;
+            CheckGeometry tool = null;
+            IGeoProcessorResult2 result = null;
 
             try
             {
-                cursor = featureClass.Search(null, false);
+                geoprocessor = new Geoprocessor();
+                geoprocessor.OverwriteOutput = true;
 
-                while ((feature = cursor.NextFeature()) != null)
+                tool = new CheckGeometry();
+                tool.in_features = inputFeatureClassPath;
+                tool.out_table = outputTablePath;
+
+                result = (IGeoProcessorResult2)geoprocessor.Execute(tool, null);
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Check Geometry 未返回执行结果。");
+                }
+
+                if (result.Status != esriJobStatus.esriJobSucceeded)
+                {
+                    throw new InvalidOperationException(BuildGeoprocessorMessage(result));
+                }
+            }
+            finally
+            {
+                ReleaseComObject(result);
+                ReleaseComObject(tool);
+                ReleaseComObject(geoprocessor);
+            }
+        }
+
+        private static List<TopologyIssueInfo> ReadIssues(string outputTablePath, IFeatureClass featureClass, GdbLayerInfo layerInfo, CancellationToken token, IProgress<string> progress)
+        {
+            IWorkspaceFactory tableFactory = null;
+            IWorkspace tableWorkspace = null;
+            IFeatureWorkspace tableFeatureWorkspace = null;
+            ITable issueTable = null;
+            ICursor cursor = null;
+            IRow row = null;
+
+            var issues = new List<TopologyIssueInfo>();
+
+            try
+            {
+                tableFactory = new ShapefileWorkspaceFactoryClass();
+                tableWorkspace = tableFactory.OpenFromFile(System.IO.Path.GetDirectoryName(outputTablePath), 0);
+                tableFeatureWorkspace = (IFeatureWorkspace)tableWorkspace;
+                issueTable = tableFeatureWorkspace.OpenTable(System.IO.Path.GetFileName(outputTablePath));
+
+                var classFieldIndex = issueTable.FindField("CLASS");
+                var featureIdFieldIndex = issueTable.FindField("FEATURE_ID");
+                var problemFieldIndex = issueTable.FindField("PROBLEM");
+
+                cursor = issueTable.Search(null, false);
+                var issueCount = 0;
+                while ((row = cursor.NextRow()) != null)
                 {
                     token.ThrowIfCancellationRequested();
-                    processedCount++;
-
-                    if (processedCount == 1 || processedCount == featureCount || processedCount % reportStep == 0)
+                    issueCount++;
+                    if (issueCount == 1 || issueCount % 10 == 0)
                     {
-                        progress.Report(string.Format("正在检查要素 {0}/{1}，当前发现 {2} 个问题...", processedCount, featureCount, issues.Count));
+                        progress.Report(string.Format("正在整理检查结果，当前已读取 {0} 条问题记录...", issueCount));
                     }
 
-                    IGeometry geometry = null;
+                    var featureId = ReadIntValue(row, featureIdFieldIndex);
+                    var problem = ReadStringValue(row, problemFieldIndex);
+                    var className = ReadStringValue(row, classFieldIndex);
+
+                    IFeature feature = null;
+                    IGeometry focusGeometry = null;
                     try
                     {
-                        geometry = feature.ShapeCopy;
-
-                        if (geometry == null || geometry.IsEmpty)
+                        if (featureId >= 0)
                         {
-                            issues.Add(CreateIssue(layerInfo, "空几何", "要素未包含有效几何。", feature.OID, null, null));
-                            continue;
+                            feature = featureClass.GetFeature(featureId);
+                            if (feature != null)
+                            {
+                                focusGeometry = feature.ShapeCopy;
+                            }
                         }
 
-                        if (ShouldCheckSimpleGeometry(featureClass.ShapeType) && !((ITopologicalOperator)geometry).IsSimple)
-                        {
-                            issues.Add(CreateIssue(layerInfo, "非简单几何", "要素几何不是 simple 状态，可能存在自相交、自重叠或方向异常。", feature.OID, null, geometry));
-                        }
-
-                        if (featureClass.ShapeType == esriGeometryType.esriGeometryPoint)
-                        {
-                            CheckDuplicatePoints(featureClass, layerInfo, feature, geometry, issues, token);
-                        }
-
-                        if (featureClass.ShapeType == esriGeometryType.esriGeometryPolygon)
-                        {
-                            CheckPolygonOverlaps(featureClass, layerInfo, feature, geometry, issues, token);
-                        }
+                        issues.Add(CreateIssue(layerInfo, className, problem, featureId, focusGeometry));
                     }
                     finally
                     {
-                        ReleaseComObject(geometry);
+                        ReleaseComObject(focusGeometry);
                         ReleaseComObject(feature);
-                        feature = null;
+                        ReleaseComObject(row);
+                        row = null;
                     }
                 }
             }
             finally
             {
-                ReleaseComObject(feature);
+                ReleaseComObject(row);
                 ReleaseComObject(cursor);
+                ReleaseComObject(issueTable);
+                ReleaseComObject(tableFeatureWorkspace);
+                ReleaseComObject(tableWorkspace);
+                ReleaseComObject(tableFactory);
             }
+
+            return issues;
         }
 
-        private static void CheckDuplicatePoints(IFeatureClass featureClass, GdbLayerInfo layerInfo, IFeature feature, IGeometry geometry, IList<TopologyIssueInfo> issues, CancellationToken token)
-        {
-            ISpatialFilter filter = new SpatialFilterClass();
-            IFeatureCursor cursor = null;
-            IFeature candidate = null;
-
-            try
-            {
-                filter.Geometry = geometry;
-                filter.GeometryField = featureClass.ShapeFieldName;
-                filter.SpatialRel = esriSpatialRelEnum.esriSpatialRelIntersects;
-                filter.SubFields = string.Format("{0},{1}", featureClass.OIDFieldName, featureClass.ShapeFieldName);
-
-                cursor = featureClass.Search(filter, false);
-                while ((candidate = cursor.NextFeature()) != null)
-                {
-                    token.ThrowIfCancellationRequested();
-
-                    if (candidate.OID <= feature.OID)
-                    {
-                        ReleaseComObject(candidate);
-                        candidate = null;
-                        continue;
-                    }
-
-                    IGeometry candidateGeometry = null;
-                    try
-                    {
-                        candidateGeometry = candidate.ShapeCopy;
-                        if (candidateGeometry != null && !candidateGeometry.IsEmpty && ((IRelationalOperator)geometry).Equals(candidateGeometry))
-                        {
-                            issues.Add(CreateIssue(layerInfo, "重复点", "检测到坐标完全相同的点要素。", feature.OID, candidate.OID, geometry));
-                        }
-                    }
-                    finally
-                    {
-                        ReleaseComObject(candidateGeometry);
-                        ReleaseComObject(candidate);
-                        candidate = null;
-                    }
-                }
-            }
-            finally
-            {
-                ReleaseComObject(candidate);
-                ReleaseComObject(cursor);
-                ReleaseComObject(filter);
-            }
-        }
-
-        private static void CheckPolygonOverlaps(IFeatureClass featureClass, GdbLayerInfo layerInfo, IFeature feature, IGeometry geometry, IList<TopologyIssueInfo> issues, CancellationToken token)
-        {
-            ISpatialFilter filter = new SpatialFilterClass();
-            IFeatureCursor cursor = null;
-            IFeature candidate = null;
-
-            try
-            {
-                filter.Geometry = geometry;
-                filter.GeometryField = featureClass.ShapeFieldName;
-                filter.SpatialRel = esriSpatialRelEnum.esriSpatialRelIntersects;
-                filter.SubFields = string.Format("{0},{1}", featureClass.OIDFieldName, featureClass.ShapeFieldName);
-
-                cursor = featureClass.Search(filter, false);
-                while ((candidate = cursor.NextFeature()) != null)
-                {
-                    token.ThrowIfCancellationRequested();
-
-                    if (candidate.OID <= feature.OID)
-                    {
-                        ReleaseComObject(candidate);
-                        candidate = null;
-                        continue;
-                    }
-
-                    IGeometry candidateGeometry = null;
-                    IGeometry intersection = null;
-
-                    try
-                    {
-                        candidateGeometry = candidate.ShapeCopy;
-                        if (candidateGeometry == null || candidateGeometry.IsEmpty)
-                        {
-                            continue;
-                        }
-
-                        intersection = ((ITopologicalOperator)geometry).Intersect(candidateGeometry, esriGeometryDimension.esriGeometry2Dimension);
-                        if (intersection == null || intersection.IsEmpty)
-                        {
-                            continue;
-                        }
-
-                        var area = intersection as IArea;
-                        if (area != null && area.Area > 0)
-                        {
-                            issues.Add(CreateIssue(layerInfo, "面重叠", "检测到与同图层其他面要素存在重叠区域。", feature.OID, candidate.OID, intersection));
-                        }
-                    }
-                    finally
-                    {
-                        ReleaseComObject(intersection);
-                        ReleaseComObject(candidateGeometry);
-                        ReleaseComObject(candidate);
-                        candidate = null;
-                    }
-                }
-            }
-            finally
-            {
-                ReleaseComObject(candidate);
-                ReleaseComObject(cursor);
-                ReleaseComObject(filter);
-            }
-        }
-
-        private static TopologyIssueInfo CreateIssue(GdbLayerInfo layerInfo, string ruleName, string description, int featureId, int? relatedFeatureId, IGeometry focusGeometry)
+        private static TopologyIssueInfo CreateIssue(GdbLayerInfo layerInfo, string className, string problem, int featureId, IGeometry focusGeometry)
         {
             var issue = new TopologyIssueInfo
             {
-                RuleName = ruleName,
-                Description = description,
+                RuleName = string.IsNullOrWhiteSpace(problem) ? "几何质量问题" : problem,
+                Description = BuildDescription(className, problem),
                 GdbPath = layerInfo.GdbPath,
                 DatasetName = layerInfo.DatasetName,
                 LayerName = string.IsNullOrWhiteSpace(layerInfo.LayerName) ? layerInfo.DatasetName : layerInfo.LayerName,
                 FeatureId = featureId,
-                RelatedFeatureId = relatedFeatureId
+                RelatedFeatureId = null
             };
 
             if (focusGeometry != null && !focusGeometry.IsEmpty)
@@ -274,7 +224,6 @@ namespace QualityCheckApp.Engine.Services
                         double xMax;
                         double yMax;
                         envelope.QueryCoords(out xMin, out yMin, out xMax, out yMax);
-
                         issue.HasFocusExtent = true;
                         issue.FocusXMin = xMin;
                         issue.FocusYMin = yMin;
@@ -291,41 +240,105 @@ namespace QualityCheckApp.Engine.Services
             return issue;
         }
 
-        private static bool ShouldCheckSimpleGeometry(esriGeometryType geometryType)
+        private static string BuildDescription(string className, string problem)
         {
-            return geometryType == esriGeometryType.esriGeometryLine
-                   || geometryType == esriGeometryType.esriGeometryPolyline
-                   || geometryType == esriGeometryType.esriGeometryPolygon;
+            if (!string.IsNullOrWhiteSpace(className) && !string.IsNullOrWhiteSpace(problem))
+            {
+                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”，来源对象类别为“{1}”。", problem, className);
+            }
+
+            if (!string.IsNullOrWhiteSpace(problem))
+            {
+                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”。", problem);
+            }
+
+            return "ArcGIS Check Geometry 返回了未命名的几何质量问题。";
         }
 
-        private static string BuildRuleSummary(esriGeometryType geometryType)
+        private static string BuildInputFeatureClassPath(GdbLayerInfo layerInfo)
         {
-            if (geometryType == esriGeometryType.esriGeometryPoint)
-            {
-                return "空几何、重复点";
-            }
-
-            if (geometryType == esriGeometryType.esriGeometryPolygon)
-            {
-                return "空几何、非简单几何、面重叠";
-            }
-
-            if (geometryType == esriGeometryType.esriGeometryLine || geometryType == esriGeometryType.esriGeometryPolyline)
-            {
-                return "空几何、非简单几何";
-            }
-
-            return "空几何";
+            return System.IO.Path.Combine(layerInfo.GdbPath, layerInfo.DatasetName);
         }
 
-        private static string BuildSummary(string layerName, int featureCount, string ruleSummary, int issueCount)
+        private static string BuildSummary(string layerName, int featureCount, int issueCount)
         {
-            if (featureCount == 0)
+            return string.Format("图层 {0} 已按 ArcGIS Check Geometry 官方工具检查 {1} 个要素，发现 {2} 个问题。", layerName, featureCount, issueCount);
+        }
+
+        private static string BuildGeoprocessorMessage(IGeoProcessorResult2 result)
+        {
+            if (result == null)
             {
-                return string.Format("图层 {0} 没有可检测要素。", layerName);
+                return "ArcGIS Geoprocessor 执行失败。";
             }
 
-            return string.Format("图层 {0} 已检查 {1} 个要素，执行规则：{2}，发现 {3} 个问题。", layerName, featureCount, ruleSummary, issueCount);
+            var messages = new List<string>();
+            for (var index = 0; index < result.MessageCount; index++)
+            {
+                var message = result.GetMessage(index);
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    messages.Add(message);
+                }
+            }
+
+            if (messages.Count == 0)
+            {
+                return "ArcGIS Check Geometry 执行失败，但未返回详细信息。";
+            }
+
+            return string.Join(" ", messages);
+        }
+
+        private static int ReadIntValue(IRow row, int fieldIndex)
+        {
+            if (row == null || fieldIndex < 0)
+            {
+                return -1;
+            }
+
+            var value = row.get_Value(fieldIndex);
+            if (value == null || value == DBNull.Value)
+            {
+                return -1;
+            }
+
+            int parsedValue;
+            return int.TryParse(Convert.ToString(value), out parsedValue) ? parsedValue : -1;
+        }
+
+        private static string ReadStringValue(IRow row, int fieldIndex)
+        {
+            if (row == null || fieldIndex < 0)
+            {
+                return string.Empty;
+            }
+
+            var value = row.get_Value(fieldIndex);
+            return value == null || value == DBNull.Value ? string.Empty : Convert.ToString(value);
+        }
+
+        private static string CreateTempDirectory()
+        {
+            var directory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "QualityCheckApp.Engine", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            return directory;
+        }
+
+        private static void SafeDeleteDirectory(string directory)
+        {
+            if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
+            {
+                return;
+            }
+
+            try
+            {
+                Directory.Delete(directory, true);
+            }
+            catch
+            {
+            }
         }
 
         private static void ReleaseComObject(object value)

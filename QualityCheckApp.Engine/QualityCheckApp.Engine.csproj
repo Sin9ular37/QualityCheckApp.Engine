@@ -107,6 +107,18 @@
       <HintPath>$(ArcGisSdkPath)\ESRI.ArcGIS.DataSourcesFile.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="ESRI.ArcGIS.Geoprocessing">
+      <HintPath>$(ArcGisSdkPath)\ESRI.ArcGIS.Geoprocessing.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ESRI.ArcGIS.Geoprocessor">
+      <HintPath>$(ArcGisSdkPath)\ESRI.ArcGIS.Geoprocessor.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ESRI.ArcGIS.DataManagementTools">
+      <HintPath>$(ArcGisSdkPath)\ESRI.ArcGIS.DataManagementTools.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
