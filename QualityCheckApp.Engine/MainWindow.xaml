@@ -382,7 +382,7 @@
                                    Margin="0,10,0,0"
                                    Foreground="{StaticResource PrimaryTextBrush}"
                                    TextWrapping="Wrap" />
-                        <TextBlock Text="支持普通 .gdb ZIP；若压缩包中出现 测试1/测试2/测试3 目录，则自动切换到标准测试包校验模式。"
+                        <TextBlock Text="根目录下的“XX数据汇交成果.zip”为标准质检目录格式；若压缩包格式不符合，也会继续检查其中是否存在 .gdb。"
                                    Margin="0,10,0,0"
                                    Style="{StaticResource MutedTextStyle}" />
                         <WrapPanel Margin="0,16,0,0">
@@ -470,6 +470,11 @@
                         <TextBlock Text="{Binding StructureSummary}"
                                    Margin="0,12,0,0"
                                    Foreground="{StaticResource PrimaryTextBrush}"
+                                   TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding PackageFormatWarning}"
+                                   Margin="0,10,0,0"
+                                   Foreground="#FFD16100"
+                                   FontWeight="SemiBold"
                                    TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
@@ -584,9 +589,14 @@
                                         <Button Content="清空问题"
                                                 Width="96"
                                                 Style="{StaticResource SecondaryButtonStyle}"
-                                                Margin="0"
                                                 Click="OnClearTopologyClick"
                                                 IsEnabled="{Binding IsNotBusy}" />
+                                        <Button Content="导出报告"
+                                                Width="96"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Margin="0"
+                                                Click="OnExportTopologyReportClick"
+                                                IsEnabled="{Binding CanExportTopologyReport}" />
                                     </WrapPanel>
                                 </Grid>
 
