@@ -440,7 +440,7 @@ namespace QualityCheckApp.Engine
                 _currentExtraction = await _zipService.ExtractAsync(SelectedZipPath, token);
 
                 StatusMessage = "正在检查压缩包结构...";
-                var formatInspection = _packageFormatInspectorService.Inspect(_currentExtraction.ExtractionRoot, _currentExtraction.GdbDirectories);
+                var formatInspection = _packageFormatInspectorService.Inspect(SelectedZipPath, _currentExtraction.ExtractionRoot, _currentExtraction.GdbDirectories);
                 PackageMode = formatInspection.PackageMode;
                 StructureSummary = formatInspection.StructureSummary;
                 PackageFormatWarning = formatInspection.WarningMessage;
