@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +8,6 @@ namespace QualityCheckApp.Engine.Services
 {
     public interface ITopologyCheckService
     {
-        Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken);
+        Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken, IProgress<string> progress);
     }
 }

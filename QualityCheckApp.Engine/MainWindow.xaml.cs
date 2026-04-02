@@ -46,6 +46,7 @@ namespace QualityCheckApp.Engine
         private string _structureSummary = "尚未执行压缩包检查。";
         private string _packageFormatWarning = string.Empty;
         private string _topologySummary = "请选择图层并执行拓扑检测。";
+        private string _topologyProgressMessage = "等待开始拓扑检测。";
         private int _detectedGdbCount;
         private bool _isBusy;
         private bool _isMapReady;
@@ -258,6 +259,21 @@ namespace QualityCheckApp.Engine
 
                 _topologySummary = value ?? string.Empty;
                 OnPropertyChanged("TopologySummary");
+            }
+        }
+
+        public string TopologyProgressMessage
+        {
+            get { return _topologyProgressMessage; }
+            private set
+            {
+                if (_topologyProgressMessage == value)
+                {
+                    return;
+                }
+
+                _topologyProgressMessage = value ?? string.Empty;
+                OnPropertyChanged("TopologyProgressMessage");
             }
         }
 
@@ -482,9 +498,17 @@ namespace QualityCheckApp.Engine
             {
                 StatusMessage = string.Format("正在检测图层 {0} 的拓扑问题...", SelectedLayer.LayerName);
                 ClearTopologyResults();
+                TopologyProgressMessage = string.Format("已进入拓扑检测：{0}", SelectedLayer.LayerName);
 
-                var result = await _topologyCheckService.CheckLayerAsync(SelectedLayer, token);
+                var progress = new Progress<string>(message =>
+                {
+                    TopologyProgressMessage = message;
+                    StatusMessage = message;
+                });
+
+                var result = await _topologyCheckService.CheckLayerAsync(SelectedLayer, token, progress);
                 ApplyTopologyResult(result);
+                TopologyProgressMessage = string.Format("检测完成：{0}", result.Summary);
 
                 StatusMessage = string.Format("拓扑检测完成：{0}", TopologySummary);
             });
@@ -603,6 +627,7 @@ namespace QualityCheckApp.Engine
             SelectedTopologyIssue = null;
             TopologyIssues.Clear();
             TopologySummary = "请选择图层并执行拓扑检测。";
+            TopologyProgressMessage = "等待开始拓扑检测。";
             NotifyTopologyStateChanged();
         }
 

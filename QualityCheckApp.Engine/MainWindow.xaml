@@ -6,10 +6,11 @@
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
         Title="质检地图工作台"
-        Height="820"
+        Height="920"
         Width="1440"
-        MinHeight="720"
+        MinHeight="820"
         MinWidth="1180"
+        WindowStartupLocation="CenterScreen"
         Background="#FFF4F7FB">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -365,7 +366,11 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Column="1">
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="0,0,4,0">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -606,6 +611,11 @@
                                         CornerRadius="14"
                                         Background="{StaticResource SubtleSurfaceBrush}">
                                     <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
@@ -633,9 +643,17 @@
                                         </Border>
 
                                         <TextBlock Grid.Column="1"
-                                                   VerticalAlignment="Center"
-                                                   Text="{Binding TopologySummary}"
-                                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                                    VerticalAlignment="Center"
+                                                    Text="{Binding TopologySummary}"
+                                                    Foreground="{StaticResource PrimaryTextBrush}"
+                                                    TextWrapping="Wrap" />
+
+                                        <TextBlock Grid.Row="1"
+                                                   Grid.Column="1"
+                                                   Margin="0,12,0,0"
+                                                   Text="{Binding TopologyProgressMessage}"
+                                                   Foreground="#FF4A617D"
+                                                   FontSize="12"
                                                    TextWrapping="Wrap" />
                                     </Grid>
                                 </Border>
@@ -675,6 +693,7 @@
                     </TabControl>
                 </Border>
             </Grid>
+            </ScrollViewer>
         </Grid>
 
         <Border Grid.RowSpan="2"

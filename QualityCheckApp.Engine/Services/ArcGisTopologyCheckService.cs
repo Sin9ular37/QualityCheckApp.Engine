@@ -15,12 +15,12 @@ namespace QualityCheckApp.Engine.Services
 {
     public class ArcGisTopologyCheckService : ITopologyCheckService
     {
-        public Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken)
+        public Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken, IProgress<string> progress)
         {
-            return StaTask.Run(() => CheckLayer(layerInfo, cancellationToken), cancellationToken);
+            return StaTask.Run(() => CheckLayer(layerInfo, cancellationToken, progress), cancellationToken);
         }
 
-        private static TopologyCheckResult CheckLayer(GdbLayerInfo layerInfo, CancellationToken token)
+        private static TopologyCheckResult CheckLayer(GdbLayerInfo layerInfo, CancellationToken token, IProgress<string> progress)
         {
             if (layerInfo == null)
             {
@@ -39,23 +39,27 @@ namespace QualityCheckApp.Engine.Services
 
             try
             {
+                progress.Report("正在打开地理数据库...");
                 workspace = factory.OpenFromFile(layerInfo.GdbPath, 0);
                 featureWorkspace = (IFeatureWorkspace)workspace;
+                progress.Report("正在打开目标图层...");
                 featureClass = featureWorkspace.OpenFeatureClass(layerInfo.DatasetName);
 
                 var result = new TopologyCheckResult();
                 result.LayerName = string.IsNullOrWhiteSpace(layerInfo.LayerName) ? layerInfo.DatasetName : layerInfo.LayerName;
                 result.FeatureCount = featureClass.FeatureCount(null);
                 result.RuleSummary = BuildRuleSummary(featureClass.ShapeType);
+                progress.Report(string.Format("已获取图层，共 {0} 个要素，开始逐要素检查...", result.FeatureCount));
 
                 var issues = new List<TopologyIssueInfo>();
                 if (result.FeatureCount > 0)
                 {
-                    InspectFeatures(featureClass, layerInfo, issues, token);
+                    InspectFeatures(featureClass, layerInfo, issues, result.FeatureCount, token, progress);
                 }
 
                 result.Issues = issues;
                 result.Summary = BuildSummary(result.LayerName, result.FeatureCount, result.RuleSummary, result.IssueCount);
+                progress.Report(string.Format("拓扑检查完成：共发现 {0} 个问题。", result.IssueCount));
                 return result;
             }
             finally
@@ -67,10 +71,12 @@ namespace QualityCheckApp.Engine.Services
             }
         }
 
-        private static void InspectFeatures(IFeatureClass featureClass, GdbLayerInfo layerInfo, IList<TopologyIssueInfo> issues, CancellationToken token)
+        private static void InspectFeatures(IFeatureClass featureClass, GdbLayerInfo layerInfo, IList<TopologyIssueInfo> issues, int featureCount, CancellationToken token, IProgress<string> progress)
         {
             IFeatureCursor cursor = null;
             IFeature feature = null;
+            var processedCount = 0;
+            var reportStep = Math.Max(featureCount / 20, 1);
 
             try
             {
@@ -79,6 +85,12 @@ namespace QualityCheckApp.Engine.Services
                 while ((feature = cursor.NextFeature()) != null)
                 {
                     token.ThrowIfCancellationRequested();
+                    processedCount++;
+
+                    if (processedCount == 1 || processedCount == featureCount || processedCount % reportStep == 0)
+                    {
+                        progress.Report(string.Format("正在检查要素 {0}/{1}，当前发现 {2} 个问题...", processedCount, featureCount, issues.Count));
+                    }
 
                     IGeometry geometry = null;
                     try
