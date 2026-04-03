@@ -1,6 +1,6 @@
-#define MyAppName "QualityCheckApp.Engine"
+#define MyAppName "哈勘院质检工具"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "QualityCheckApp.Engine"
+#define MyAppPublisher "哈勘院"
 #define MyAppExeName "QualityCheckApp.Engine.exe"
 
 #ifndef MyBuildOutput
