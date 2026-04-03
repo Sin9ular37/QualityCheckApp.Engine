@@ -10,23 +10,38 @@ $solutionPath = Join-Path $root 'QualityCheckApp.Engine.sln'
 $projectDir = Join-Path $root 'QualityCheckApp.Engine'
 $buildOutput = Join-Path $projectDir (Join-Path 'bin' $Configuration)
 $artifactsRoot = Join-Path $root 'artifacts\installer'
-$stageRoot = Join-Path $artifactsRoot 'stage'
-$payloadRoot = Join-Path $stageRoot 'Payload'
-$payloadZip = Join-Path $stageRoot 'payload.zip'
-$sedPath = Join-Path $stageRoot 'QualityCheckApp.Engine.sed'
-$targetExe = Join-Path $artifactsRoot 'QualityCheckApp.Engine-Setup.exe'
+$appFilesRoot = Join-Path $artifactsRoot 'AppFiles'
+$issPath = Join-Path $PSScriptRoot 'QualityCheckApp.Engine.iss'
 $msbuildPath = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe'
-$iexpressPath = 'C:\Windows\System32\iexpress.exe'
+$defaultIscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+$localIscc = Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'
+$isccPath = $defaultIscc
 
 if (-not (Test-Path $msbuildPath)) {
     throw "MSBuild not found: $msbuildPath"
 }
 
-if (-not (Test-Path $iexpressPath)) {
-    throw "IExpress not found: $iexpressPath"
+if (-not (Test-Path $isccPath)) {
+    if (Test-Path $localIscc) {
+        $isccPath = $localIscc
+    }
+    else {
+        $command = Get-Command iscc -ErrorAction SilentlyContinue
+        if ($command -ne $null) {
+            $isccPath = $command.Source
+        }
+    }
 }
 
-Write-Host '1/5 Building application...'
+if (-not (Test-Path $isccPath)) {
+    throw "Inno Setup compiler not found. Install Inno Setup 6 first."
+}
+
+if (-not (Test-Path $issPath)) {
+    throw "Installer script not found: $issPath"
+}
+
+Write-Host '1/4 Building application...'
 & $msbuildPath $solutionPath /t:Build /p:Configuration=$Configuration /p:Platform=$Platform /verbosity:minimal
 if (-not $?) {
     throw 'Application build failed.'
@@ -36,86 +51,38 @@ if (-not (Test-Path $buildOutput)) {
     throw "Build output folder not found: $buildOutput"
 }
 
-Write-Host '2/5 Preparing installer staging...'
+Write-Host '2/4 Preparing installer files...'
 if (Test-Path $artifactsRoot) {
     Remove-Item -LiteralPath $artifactsRoot -Recurse -Force
 }
 
-New-Item -ItemType Directory -Path $payloadRoot | Out-Null
+New-Item -ItemType Directory -Path $appFilesRoot | Out-Null
 
 $filesToCopy = Get-ChildItem -Path $buildOutput -File | Where-Object {
     $_.Name -notlike '*.pdb' -and $_.Name -notlike '*.vshost*'
 }
 
 if ($filesToCopy.Count -eq 0) {
-    throw 'No files were found in the build output folder.'
+    throw 'No publishable files were found in the build output folder.'
 }
 
-Copy-Item -Path $filesToCopy.FullName -Destination $payloadRoot -Force
-Copy-Item -Path (Join-Path $PSScriptRoot 'InstallApp.ps1') -Destination $stageRoot -Force
-Copy-Item -Path (Join-Path $PSScriptRoot 'InstallApp.cmd') -Destination $stageRoot -Force
+Copy-Item -Path $filesToCopy.FullName -Destination $appFilesRoot -Force
 
-$readmePath = Join-Path $payloadRoot 'README.txt'
+$readmePath = Join-Path $appFilesRoot 'README.txt'
 $readmeContent = @'
 QualityCheckApp.Engine Installer Notes
 
-1. This installer only deploys the application files and shortcuts.
+1. This installer deploys the application files, uninstall entry, and shortcuts.
 2. ArcGIS Engine Runtime and license configuration must be installed manually on the target machine.
-3. If the app fails to start, verify the ArcGIS runtime and license environment first.
+3. If the application fails to start, verify ArcGIS runtime and license first.
 '@
 Set-Content -Path $readmePath -Value $readmeContent -Encoding ASCII
 
-Write-Host '3/5 Creating payload zip...'
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory($payloadRoot, $payloadZip)
-
-Write-Host '4/5 Generating IExpress configuration...'
-$targetExeEscaped = $targetExe.Replace('\', '\\')
-$stageRootEscaped = ($stageRoot + '\').Replace('\', '\\')
-$sed = @"
-[Version]
-Class=IEXPRESS
-SEDVersion=3
-
-[Options]
-PackagePurpose=InstallApp
-ShowInstallProgramWindow=1
-HideExtractAnimation=1
-UseLongFileName=1
-InsideCompressed=0
-CAB_FixedSize=0
-CAB_ResvCodeSigning=0
-RebootMode=N
-InstallPrompt=
-DisplayLicense=
-FinishMessage=Installation completed. Make sure ArcGIS Engine Runtime and license are installed manually.
-TargetName=$targetExeEscaped
-FriendlyName=QualityCheckApp.Engine Setup
-AppLaunched=InstallApp.cmd
-PostInstallCmd=<None>
-AdminQuietInstCmd=InstallApp.cmd
-UserQuietInstCmd=InstallApp.cmd
-SourceFiles=SourceFiles
-
-[SourceFiles]
-SourceFiles0=$stageRootEscaped
-
-[SourceFiles0]
-%FILE0%=
-%FILE1%=
-%FILE2%=
-
-[Strings]
-FILE0=InstallApp.cmd
-FILE1=InstallApp.ps1
-FILE2=payload.zip
-"@
-Set-Content -Path $sedPath -Value $sed -Encoding ASCII
-
-Write-Host '5/5 Building installer exe...'
-& $iexpressPath /N $sedPath
+Write-Host '3/4 Building Inno Setup package...'
+& $isccPath "/DMyAppRoot=$root" "/DMyBuildOutput=$appFilesRoot" "/DMyArtifactsRoot=$artifactsRoot" $issPath
 if (-not $?) {
-    throw 'IExpress failed to build the installer.'
+    throw 'Inno Setup failed to build the installer.'
 }
 
-Write-Host "Installer created: $targetExe"
+Write-Host '4/4 Installer completed.'
+Write-Host "Installer created in: $artifactsRoot"
