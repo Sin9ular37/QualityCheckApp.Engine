@@ -132,6 +132,7 @@
     </Compile>
     <Compile Include="Models\GdbLayerInfo.cs" />
     <Compile Include="Models\PackageFormatInspectionResult.cs" />
+    <Compile Include="Models\TopologyCheckProgressInfo.cs" />
     <Compile Include="Models\TopologyCheckResult.cs" />
     <Compile Include="Models\TopologyIssueInfo.cs" />
     <Compile Include="Models\ZipExtractionResult.cs" />

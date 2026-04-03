@@ -47,6 +47,7 @@ namespace QualityCheckApp.Engine
         private string _packageFormatWarning = string.Empty;
         private string _topologySummary = "请选择图层并执行拓扑检测。";
         private string _topologyProgressMessage = "等待开始拓扑检测。";
+        private int _topologyProgressPercent;
         private int _detectedGdbCount;
         private bool _isBusy;
         private bool _isMapReady;
@@ -173,6 +174,7 @@ namespace QualityCheckApp.Engine
                 OnPropertyChanged("CanRunTopologyCheck");
                 OnPropertyChanged("CanLocateSelectedTopologyIssue");
                 OnPropertyChanged("CanExportTopologyReport");
+                OnPropertyChanged("IsTopologyProgressVisible");
             }
         }
 
@@ -275,6 +277,26 @@ namespace QualityCheckApp.Engine
                 _topologyProgressMessage = value ?? string.Empty;
                 OnPropertyChanged("TopologyProgressMessage");
             }
+        }
+
+        public int TopologyProgressPercent
+        {
+            get { return _topologyProgressPercent; }
+            private set
+            {
+                if (_topologyProgressPercent == value)
+                {
+                    return;
+                }
+
+                _topologyProgressPercent = value;
+                OnPropertyChanged("TopologyProgressPercent");
+            }
+        }
+
+        public bool IsTopologyProgressVisible
+        {
+            get { return IsBusy && SelectedLayer != null; }
         }
 
         public int DetectedGdbCount
@@ -499,15 +521,23 @@ namespace QualityCheckApp.Engine
                 StatusMessage = string.Format("正在检测图层 {0} 的拓扑问题...", SelectedLayer.LayerName);
                 ClearTopologyResults();
                 TopologyProgressMessage = string.Format("已进入拓扑检测：{0}", SelectedLayer.LayerName);
+                TopologyProgressPercent = 1;
 
-                var progress = new Progress<string>(message =>
+                var progress = new Progress<TopologyCheckProgressInfo>(info =>
                 {
-                    TopologyProgressMessage = message;
-                    StatusMessage = message;
+                    if (info == null)
+                    {
+                        return;
+                    }
+
+                    TopologyProgressPercent = info.Percent;
+                    TopologyProgressMessage = info.Message;
+                    StatusMessage = info.Message;
                 });
 
                 var result = await _topologyCheckService.CheckLayerAsync(SelectedLayer, token, progress);
                 ApplyTopologyResult(result);
+                TopologyProgressPercent = 100;
                 TopologyProgressMessage = string.Format("检测完成：{0}", result.Summary);
 
                 StatusMessage = string.Format("拓扑检测完成：{0}", TopologySummary);
@@ -628,6 +658,7 @@ namespace QualityCheckApp.Engine
             TopologyIssues.Clear();
             TopologySummary = "请选择图层并执行拓扑检测。";
             TopologyProgressMessage = "等待开始拓扑检测。";
+            TopologyProgressPercent = 0;
             NotifyTopologyStateChanged();
         }
 

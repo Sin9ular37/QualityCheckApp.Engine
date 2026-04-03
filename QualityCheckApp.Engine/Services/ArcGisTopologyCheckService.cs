@@ -53,12 +53,12 @@ namespace QualityCheckApp.Engine.Services
             { "SE_INVALID_ENTITY", "实体无效" }
         };
 
-        public Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken, IProgress<string> progress)
+        public Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken, IProgress<TopologyCheckProgressInfo> progress)
         {
             return StaTask.Run(() => CheckLayer(layerInfo, cancellationToken, progress), cancellationToken);
         }
 
-        private static TopologyCheckResult CheckLayer(GdbLayerInfo layerInfo, CancellationToken token, IProgress<string> progress)
+        private static TopologyCheckResult CheckLayer(GdbLayerInfo layerInfo, CancellationToken token, IProgress<TopologyCheckProgressInfo> progress)
         {
             if (layerInfo == null)
             {
@@ -79,12 +79,12 @@ namespace QualityCheckApp.Engine.Services
 
             try
             {
-                progress.Report("正在打开地理数据库...");
+                ReportProgress(progress, 5, "正在打开地理数据库...");
                 gdbFactory = new FileGDBWorkspaceFactoryClass();
                 workspace = gdbFactory.OpenFromFile(layerInfo.GdbPath, 0);
                 featureWorkspace = (IFeatureWorkspace)workspace;
 
-                progress.Report("正在打开目标图层...");
+                ReportProgress(progress, 12, "正在打开目标图层...");
                 featureClass = featureWorkspace.OpenFeatureClass(layerInfo.DatasetName);
 
                 var result = new TopologyCheckResult();
@@ -96,20 +96,21 @@ namespace QualityCheckApp.Engine.Services
                 {
                     result.Summary = string.Format("图层 {0} 没有可检测要素。", result.LayerName);
                     result.Issues = new List<TopologyIssueInfo>();
+                    ReportProgress(progress, 100, "图层没有可检测要素。");
                     return result;
                 }
 
                 tempDirectory = CreateTempDirectory();
                 var outputTablePath = System.IO.Path.Combine(tempDirectory, "check_geometry_result.dbf");
 
-                progress.Report("正在执行 ArcGIS Check Geometry...");
+                ReportProgress(progress, 30, "正在执行 ArcGIS Check Geometry...");
                 ExecuteCheckGeometry(BuildInputFeatureClassPath(layerInfo), outputTablePath);
 
-                progress.Report("正在读取官方几何检查结果...");
+                ReportProgress(progress, 72, "正在读取官方几何检查结果...");
                 var issues = ReadIssues(outputTablePath, featureClass, layerInfo, token, progress);
                 result.Issues = issues;
                 result.Summary = BuildSummary(result.LayerName, result.FeatureCount, result.IssueCount);
-                progress.Report(string.Format("几何检查完成：共发现 {0} 个问题。", result.IssueCount));
+                ReportProgress(progress, 100, string.Format("几何检查完成：共发现 {0} 个问题。", result.IssueCount));
                 return result;
             }
             finally
@@ -156,7 +157,7 @@ namespace QualityCheckApp.Engine.Services
             }
         }
 
-        private static List<TopologyIssueInfo> ReadIssues(string outputTablePath, IFeatureClass featureClass, GdbLayerInfo layerInfo, CancellationToken token, IProgress<string> progress)
+        private static List<TopologyIssueInfo> ReadIssues(string outputTablePath, IFeatureClass featureClass, GdbLayerInfo layerInfo, CancellationToken token, IProgress<TopologyCheckProgressInfo> progress)
         {
             IWorkspaceFactory tableFactory = null;
             IWorkspace tableWorkspace = null;
@@ -177,6 +178,12 @@ namespace QualityCheckApp.Engine.Services
                 var classFieldIndex = issueTable.FindField("CLASS");
                 var featureIdFieldIndex = issueTable.FindField("FEATURE_ID");
                 var problemFieldIndex = issueTable.FindField("PROBLEM");
+                var totalIssueCount = issueTable.RowCount(null);
+
+                if (totalIssueCount <= 0)
+                {
+                    ReportProgress(progress, 95, "未发现几何问题，正在整理检测结果...");
+                }
 
                 cursor = issueTable.Search(null, false);
                 var issueCount = 0;
@@ -184,9 +191,9 @@ namespace QualityCheckApp.Engine.Services
                 {
                     token.ThrowIfCancellationRequested();
                     issueCount++;
-                    if (issueCount == 1 || issueCount % 10 == 0)
+                    if (issueCount == 1 || issueCount % 10 == 0 || issueCount == totalIssueCount)
                     {
-                        progress.Report(string.Format("正在整理检查结果，当前已读取 {0} 条问题记录...", issueCount));
+                        ReportReadProgress(progress, issueCount, totalIssueCount);
                     }
 
                     var featureId = ReadIntValue(row, featureIdFieldIndex);
@@ -228,6 +235,39 @@ namespace QualityCheckApp.Engine.Services
             }
 
             return issues;
+        }
+
+        private static void ReportReadProgress(IProgress<TopologyCheckProgressInfo> progress, int issueCount, int totalIssueCount)
+        {
+            if (progress == null)
+            {
+                return;
+            }
+
+            if (totalIssueCount <= 0)
+            {
+                ReportProgress(progress, 95, "未发现几何问题，正在整理检测结果...");
+                return;
+            }
+
+            var boundedIssueCount = issueCount > totalIssueCount ? totalIssueCount : issueCount;
+            var percent = 72 + (int)Math.Round((double)boundedIssueCount * 23 / totalIssueCount);
+            if (percent > 95)
+            {
+                percent = 95;
+            }
+
+            ReportProgress(progress, percent, string.Format("正在整理检查结果：已读取 {0}/{1} 条问题记录...", boundedIssueCount, totalIssueCount));
+        }
+
+        private static void ReportProgress(IProgress<TopologyCheckProgressInfo> progress, int percent, string message)
+        {
+            if (progress == null)
+            {
+                return;
+            }
+
+            progress.Report(new TopologyCheckProgressInfo(percent, message));
         }
 
         private static TopologyIssueInfo CreateIssue(GdbLayerInfo layerInfo, string className, string problem, int featureId, IGeometry focusGeometry)

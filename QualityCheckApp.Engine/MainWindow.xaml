@@ -614,6 +614,7 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
                                         <Grid.ColumnDefinitions>
@@ -655,6 +656,22 @@
                                                    Foreground="#FF4A617D"
                                                    FontSize="12"
                                                    TextWrapping="Wrap" />
+
+                                        <StackPanel Grid.Row="2"
+                                                    Grid.Column="1"
+                                                    Margin="0,12,0,0"
+                                                    Visibility="{Binding IsTopologyProgressVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <ProgressBar Height="10"
+                                                         Minimum="0"
+                                                         Maximum="100"
+                                                         Value="{Binding TopologyProgressPercent}"
+                                                         Foreground="#FF5B94D6"
+                                                         Background="#FFDDE9F5" />
+                                            <TextBlock Margin="0,6,0,0"
+                                                       Text="{Binding TopologyProgressPercent, StringFormat=检测进度：{0}%}"
+                                                       Foreground="#FF4A617D"
+                                                       FontSize="12" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
 
@@ -706,11 +723,21 @@
                         Background="{StaticResource PageSurfaceBrush}"
                         BorderBrush="{StaticResource BorderStrongBrush}"
                         BorderThickness="1">
-                    <TextBlock Text="正在处理压缩包，请稍候..."
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Foreground="{StaticResource PrimaryTextBrush}"
-                               HorizontalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource PrimaryTextBrush}"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="420" />
+                        <ProgressBar Height="10"
+                                     Width="280"
+                                     Margin="0,14,0,0"
+                                     IsIndeterminate="{Binding IsBusy}"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </StackPanel>
                 </Border>
             </StackPanel>
         </Border>
