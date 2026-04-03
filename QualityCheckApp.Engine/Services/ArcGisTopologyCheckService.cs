@@ -21,6 +21,38 @@ namespace QualityCheckApp.Engine.Services
 {
     public class ArcGisTopologyCheckService : ITopologyCheckService
     {
+        private static readonly Dictionary<string, string> ProblemTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Null geometry", "空几何" },
+            { "Short segment", "短线段" },
+            { "Incorrect ring ordering", "环顺序错误" },
+            { "Incorrect segment orientation", "线段方向错误" },
+            { "Self intersections", "自相交" },
+            { "Self-intersections", "自相交" },
+            { "Unclosed rings", "环未闭合" },
+            { "Empty parts", "空部件" },
+            { "Duplicate vertex", "重复顶点" },
+            { "Discontinuous parts", "不连续部件" },
+            { "Bad envelope", "包络框异常" },
+            { "Bad dataset extent", "数据集范围异常" },
+            { "Geometry has no Z values", "缺少 Z 值" },
+            { "Geometry has no M values", "缺少 M 值" },
+            { "Empty Z values", "存在空 Z 值" },
+            { "Empty M values", "存在空 M 值" },
+            { "Mismatched attributes", "属性不匹配" },
+            { "SE_INVALID_ENTITY_TYPE", "实体类型无效" },
+            { "SE_INVALID_SHAPE_OBJECT", "图形对象无效" },
+            { "SE_INVALID_PART_SEPARATOR", "部件分隔符无效" },
+            { "SE_INVALID_POLYGON_CLOSURE", "面闭合无效" },
+            { "SE_INVALID_OUTER_SHELL", "外壳无效" },
+            { "SE_ZERO_AREA_POLYGON", "零面积面" },
+            { "SE_POLYGON_HAS_VERTICAL_LINE", "面包含垂直线" },
+            { "SE_OUTER_SHELLS_OVERLAP", "外壳重叠" },
+            { "SE_SELF_INTERSECTING", "自相交" },
+            { "SE_DUPLICATE_VERTEX", "重复顶点" },
+            { "SE_INVALID_ENTITY", "实体无效" }
+        };
+
         public Task<TopologyCheckResult> CheckLayerAsync(GdbLayerInfo layerInfo, CancellationToken cancellationToken, IProgress<string> progress)
         {
             return StaTask.Run(() => CheckLayer(layerInfo, cancellationToken, progress), cancellationToken);
@@ -200,10 +232,11 @@ namespace QualityCheckApp.Engine.Services
 
         private static TopologyIssueInfo CreateIssue(GdbLayerInfo layerInfo, string className, string problem, int featureId, IGeometry focusGeometry)
         {
+            var translatedProblem = TranslateProblem(problem);
             var issue = new TopologyIssueInfo
             {
-                RuleName = string.IsNullOrWhiteSpace(problem) ? "几何质量问题" : problem,
-                Description = BuildDescription(className, problem),
+                RuleName = translatedProblem,
+                Description = BuildDescription(className, problem, translatedProblem),
                 GdbPath = layerInfo.GdbPath,
                 DatasetName = layerInfo.DatasetName,
                 LayerName = string.IsNullOrWhiteSpace(layerInfo.LayerName) ? layerInfo.DatasetName : layerInfo.LayerName,
@@ -240,19 +273,45 @@ namespace QualityCheckApp.Engine.Services
             return issue;
         }
 
-        private static string BuildDescription(string className, string problem)
+        private static string BuildDescription(string className, string problem, string translatedProblem)
         {
+            if (string.IsNullOrWhiteSpace(problem))
+            {
+                return "ArcGIS Check Geometry 返回了未命名的几何质量问题。";
+            }
+
             if (!string.IsNullOrWhiteSpace(className) && !string.IsNullOrWhiteSpace(problem))
             {
-                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”，来源对象类别为“{1}”。", problem, className);
+                if (!string.Equals(translatedProblem, problem, StringComparison.OrdinalIgnoreCase))
+                {
+                    return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”（原始值：{1}），来源对象类别为“{2}”。", translatedProblem, problem, className);
+                }
+
+                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”，来源对象类别为“{1}”。", translatedProblem, className);
             }
 
-            if (!string.IsNullOrWhiteSpace(problem))
+            if (!string.Equals(translatedProblem, problem, StringComparison.OrdinalIgnoreCase))
             {
-                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”。", problem);
+                return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”（原始值：{1}）。", translatedProblem, problem);
             }
 
-            return "ArcGIS Check Geometry 返回了未命名的几何质量问题。";
+            return string.Format("ArcGIS Check Geometry 返回的问题类型为“{0}”。", translatedProblem);
+        }
+
+        private static string TranslateProblem(string problem)
+        {
+            if (string.IsNullOrWhiteSpace(problem))
+            {
+                return "几何质量问题";
+            }
+
+            string translated;
+            if (ProblemTranslations.TryGetValue(problem.Trim(), out translated))
+            {
+                return translated;
+            }
+
+            return problem;
         }
 
         private static string BuildInputFeatureClassPath(GdbLayerInfo layerInfo)
